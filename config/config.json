@@ -3,13 +3,14 @@
     "username": "postgres",
     "password": "123456",
     "database": "storemanagement",
+    "schema": "store",
     "host": "localhost",
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
     "password": "123456",
-    "database": "database_test",
+    "database": "storemanagement",
     "host": "localhost",
     "dialect": "postgres"
   },

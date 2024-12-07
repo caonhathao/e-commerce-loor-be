@@ -4,8 +4,8 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: "Users",
-                key: 'id',
+                model: "users",
+                key: 'ID',
             },
             onDelete: "CASCADE",
         },
@@ -14,12 +14,14 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             defaultValue: 'COD',
         }
-    })
+    },{
+        tableName: 'payment',
+    });
 
     Payment.associate = (models) => {
-        Payment.belongsTo(models.user, {
-            foreignKey: 'ID',
-            as: 'user',
+        Payment.belongsTo(models.users, {
+            foreignKey: 'payment_user_id',
+            as: 'users',
         })
     }
 
