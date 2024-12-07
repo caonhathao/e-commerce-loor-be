@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Product = sequelize.define('product', {
+    const Products = sequelize.define('products', {
         ID: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: 'Categories',
+                model: 'categories',
                 key: 'ID',
             },
         },
@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: true,
             references: {
-                model: 'SubCategories',
+                model: 'subcategories',
                 key: 'ID',
             },
         },
@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: 'Brands',
+                model: 'brands',
                 key: 'ID',
             },
         },
@@ -60,16 +60,33 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             defaultValue: 0,
         },
+    }, {
+        tableName: 'products',
     });
 
-    Product.associate = (models) => {
+    Products.associate = (models) => {
 
-        Product.belongsTo(models.category, { foreignKey: 'category_id', as: 'category' });
+        Products.hasMany(models.imageproducts, {
+            foreignKey: 'product_id',
+            as: 'imageproducts',
+        })
 
-        Product.belongsTo(models.subcategory, { foreignKey: 'subCategory_id', as: 'subCategory' });
+        Products.hasOne(models.carts, {
+            foreignKey: 'product_id',
+            as: 'carts',
+        })
 
-        Product.belongsTo(models.brand, { foreignKey: 'brand_id', as: 'brand' });
+        Products.hasOne(models.reviews, {
+            foreignKey: 'product_id',
+            as: 'reviews',
+        })
+
+        Products.belongsTo(models.categories, {foreignKey: 'category_id', as: 'categories'});
+
+        Products.belongsTo(models.subcategories, {foreignKey: 'subCategory_id', as: 'subCategory'});
+
+        Products.belongsTo(models.brands, {foreignKey: 'brand_id', as: 'brand'});
     };
 
-    return Product;
+    return Products;
 };

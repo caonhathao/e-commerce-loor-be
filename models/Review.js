@@ -1,19 +1,19 @@
 module.exports = (sequelize, DataTypes) => {
-    const Review = sequelize.define('review', {
+    const Review = sequelize.define('reviews', {
         user_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: 'user',
-                key: 'id',
+                model: 'users',
+                key: 'ID',
             },
         },
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: 'product',
-                key: 'id',
+                model: 'products',
+                key: 'ID',
             },
             onDelete: "CASCADE",
         },
@@ -29,15 +29,17 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('1', '2', '3', '4', '5'),
             allowNull: false,
         },
-    })
+    }, {
+        tableName: 'reviews',
+    });
     Review.associate = (models) => {
-        Review.belongsTo(models.user, {
-            foreignKey: 'ID',
-            as: 'user',
+        Review.belongsTo(models.users, {
+            foreignKey: 'review_user_id',
+            as: 'users',
         })
-        Review.belongsTo(models.product, {
-            foreignKey: 'ID',
-            as: 'product',
+        Review.belongsTo(models.products, {
+            foreignKey: 'review_product_id',
+            as: 'products',
         })
     };
     return Review;
