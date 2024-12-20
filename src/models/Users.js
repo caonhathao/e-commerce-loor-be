@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             allowNull: false,
             primaryKey: true,
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
         },
         full_name: {
             type: DataTypes.STRING,
@@ -15,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         birthday: {
             type: DataTypes.DATE,
-            allowNull: false,
+            allowNull: true,
         },
         email: {
             type: DataTypes.STRING,
-            allowNull: true,
+            allowNull: false,
         },
         role: {
             type: DataTypes.ENUM('ROLE_USER', 'ROLE_BRAND', 'ROLE_MANAGER'),
@@ -33,36 +33,45 @@ module.exports = (sequelize, DataTypes) => {
         password: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        is_locked: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         }
-    },{
+    }, {
         tableName: 'users',
         timestamps: false
     });
 
     users.associate = (models) => {
-        users.hasMany(models.address, {
-            foreignKey: 'address_user_id',
+        users.hasMany(models.addresses, {
+            foreignKey: 'address_user_fk',
             as: 'address',
         })
         users.hasMany(models.payment, {
-            foreignKey: 'payment_user_id',
+            foreignKey: 'payment_user_fk',
             as: 'payment',
         })
         users.hasMany(models.carts, {
-            foreignKey: 'user_id',
+            foreignKey: 'carts_user_fk',
             as: 'cart',
         })
-        users.hasMany(models.reviews,{
-            foreignKey: 'user_id',
-            as: 'review',
+        users.hasMany(models.reviews, {
+            foreignKey: 'review_user_fk',
+            as: 'reviews',
         })
-        users.hasMany(models.notifications,{
-            foreignKey: 'user_id',
-            as: 'notify',
+        users.hasMany(models.notifications, {
+            foreignKey: 'notifications_user_fk',
+            as: 'notifications',
         })
-        users.hasMany(models.orders,{
-            foreignKey: 'orders_id',
+        users.hasMany(models.orders, {
+            foreignKey: 'orders_user_fk',
             as: 'orders',
+        })
+        users.hasOne(models.banned, {
+            foreignKey: 'user_id',
+            as: 'banned',
         })
     };
 

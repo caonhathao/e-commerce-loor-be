@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const ImageProduct = sequelize.define('imageproducts', {
+    const ImageProduct = sequelize.define('imageProducts', {
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -14,12 +14,12 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         }
     },{
-        tableName: 'imageproducts',
+        tableName: 'imageProducts',
     });
 
     ImageProduct.associate = (models) => {
         ImageProduct.belongsTo(models.products, {
-            foreignKey: 'images_product_id',
+            foreignKey: 'images_product_fk',
             as: 'products',
         })
     }

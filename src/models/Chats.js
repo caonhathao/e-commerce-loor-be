@@ -1,7 +1,7 @@
 module.exports=(sequelize,DataTypes) => {
-    const ChatSupport = sequelize.define('ChatSupport', {
+    const ChatSupport = sequelize.define('Chats', {
         user_id:{
-            type:DataTypes.INTEGER,
+            type:DataTypes.STRING,
             allowNull:false,
             references: {
                 model:"users",
@@ -10,7 +10,7 @@ module.exports=(sequelize,DataTypes) => {
             onDelete: "CASCADE",
         },
         brand_id:{
-            type:DataTypes.INTEGER,
+            type:DataTypes.STRING,
             allowNull:false,
             references: {
                 model:"brands",
@@ -31,11 +31,11 @@ module.exports=(sequelize,DataTypes) => {
     });
     ChatSupport.associate = function(models) {
         ChatSupport.belongsTo(models.users,{
-            foreignKey:'chat_user_id',
+            foreignKey:'chats_user_fk',
             as : 'users',
         })
         ChatSupport.belongsTo(models.brands,{
-            foreignKey:'brand_user_id',
+            foreignKey:'chats_brand_fk',
             as: 'brands',
         })
     }

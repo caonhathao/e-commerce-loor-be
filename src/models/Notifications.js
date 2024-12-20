@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
     const Notification = sequelize.define('notifications', {
         user_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'users',
@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         brand_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'brands',
@@ -29,17 +29,17 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'Notification',
             allowNull: false
         }
-    },{
+    }, {
         tableName: 'notifications',
     });
 
     Notification.associate = (models) => {
         Notification.belongsTo(models.users, {
-            foreignKey: 'user_Notification_id',
+            foreignKey: 'notifications_user_fk',
             as: 'users'
         })
         Notification.belongsTo(models.brands, {
-            foreignKey: 'brand_Notification_id',
+            foreignKey: 'notifications_brand_fk',
             as: 'brands'
         })
     };

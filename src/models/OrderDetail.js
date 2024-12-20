@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
-    const OrderDetail = sequelize.define('OrderDetail', {
+    const OrderDetail = sequelize.define('orderDetail', {
         order_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'orders',
@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
             onDelete: 'CASCADE',
         },
         product_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
         },
         amount: {
@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
 
     OrderDetail.associate = (models) => {
         OrderDetail.belongsTo(models.orders, {
-            foreignKey: 'detail_order_id',
+            foreignKey: 'orderDetails_order_fk',
             as: 'orders',
         })
     }

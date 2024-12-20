@@ -2,7 +2,7 @@ module.exports = (sequelize, DataTypes) => {
     const Carts = sequelize.define("carts", {
         user_id: {
             allowNull: false,
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             references: {
                 model: "users",
                 key: 'ID',
@@ -23,12 +23,8 @@ module.exports = (sequelize, DataTypes) => {
 
     Carts.associate = (models) => {
         Carts.belongsTo(models.users, {
-            foreignKey: 'cart_user_id',
+            foreignKey: 'carts_user_fk',
             as: 'users',
-        })
-        Carts.belongsTo(models.products, {
-            foreignKey: 'cart_product_id',
-            as: 'products',
         })
     }
     return Carts;
