@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
     const Payment = sequelize.define('payment', {
         user_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: "users",
@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Payment.associate = (models) => {
         Payment.belongsTo(models.users, {
-            foreignKey: 'payment_user_id',
+            foreignKey: 'payment_user_fk',
             as: 'users',
         })
     }

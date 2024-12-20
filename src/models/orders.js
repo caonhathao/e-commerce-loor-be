@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
     const Orders = sequelize.define('orders', {
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             primaryKey: true,
         },
@@ -28,11 +28,11 @@ module.exports = (sequelize, DataTypes) => {
 
     Orders.associate = (models) => {
         Orders.belongsTo(models.users, {
-            foreignKey: 'orders_user_id',
+            foreignKey: 'orders_user_fk',
             as: 'users',
         })
-        Orders.hasMany(models.OrderDetail, {
-            foreignKey: 'order_detail_id',
+        Orders.hasMany(models.orderDetail, {
+            foreignKey: 'orderDetails_order_fk',
             as: 'OrderDetail',
         })
     };
