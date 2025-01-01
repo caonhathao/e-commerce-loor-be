@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
             as: 'chatSupport',
         })
         Brand.hasMany(models.products, {
-            foreignKey: 'product_ brand_fk',
+            foreignKey: 'brand_id',
             as: 'products',
         })
         Brand.hasMany(models.notifications, {

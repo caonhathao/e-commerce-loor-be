@@ -2,7 +2,7 @@
 * These are all api to get and handle with user's data
 */
 
-const {createID, encryptPW} = require('../handle_functions/global_functions');
+const {createID, encryptPW} = require('../utils/global_functions');
 
 const {users} = require('../models');
 const _express = require('express');

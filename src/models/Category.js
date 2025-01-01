@@ -8,19 +8,25 @@ module.exports = (sequelize, DataTypes) => {
         name: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 'none',
         }
-    },{
+    }, {
         tableName: 'categories',
+        schema: 'store',
         timestamps: false,
     });
     Category.associate = (models) => {
-        Category.hasMany(models.products, {
-            foreignKey: 'product_category_fk',
-            as: 'products',
-        })
         Category.hasMany(models.subCategories, {
-            foreignKey: 'subcategory_category_fk',
+            foreignKey: 'category_id',
             as: 'subCategories',
+        })
+        Category.hasMany(models.products, {
+            foreignKey: 'category_id',
+            as: 'products',
         })
     }
     return Category;
