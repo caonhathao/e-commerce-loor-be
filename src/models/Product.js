@@ -1,3 +1,4 @@
+const {Sequelize} = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     const Products = sequelize.define('products', {
         id: {
@@ -14,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
         },
-        subCategory_id: {
+        subcategory_id: {
             type: DataTypes.STRING,
             allowNull: true,
             references: {
@@ -23,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
             },
         },
         brand_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'brands',
@@ -51,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         status: {
-            type: DataTypes.ENUM('1', '0'),
+            type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
             allowNull: true,
             defaultValue: '1',
         },
@@ -60,8 +61,17 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             defaultValue: 0,
         },
+        tags: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        pro_tsv: {
+            type: Sequelize.literal('tsvector'),
+            allowNull: true,
+        }
     }, {
         tableName: 'products',
+        timestamps: false
     });
 
     Products.associate = (models) => {
@@ -77,17 +87,17 @@ module.exports = (sequelize, DataTypes) => {
         })
 
         Products.belongsTo(models.categories, {
-            foreignKey: 'product_category_fk',
+            foreignKey: 'category_id',
             as: 'categories'
         });
 
         Products.belongsTo(models.subCategories, {
-            foreignKey: 'product_subcategory_fk',
-            as: 'subCategory'
+            foreignKey: 'subcategory_id',
+            as: 'subCategories'
         });
 
         Products.belongsTo(models.brands, {
-            foreignKey: 'product_ brand_fk',
+            foreignKey: 'brand_id',
             as: 'brands'
         });
     };

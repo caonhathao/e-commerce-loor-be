@@ -1,5 +1,5 @@
 /*these are all api to get and handle with brand */
-const {createID, encryptPW} = require('../handle_functions/global_functions');
+const {createID, encryptPW} = require('../utils/global_functions');
 
 const {brands, users} = require('../models');
 const _express = require('express');
