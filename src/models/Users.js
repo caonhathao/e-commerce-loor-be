@@ -66,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
             as: 'notifications',
         })
         users.hasMany(models.orders, {
-            foreignKey: 'orders_user_fk',
+            foreignKey: 'user_id',
             as: 'orders',
         })
         users.hasOne(models.banned, {

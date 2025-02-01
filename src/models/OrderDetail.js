@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
             onDelete: 'CASCADE',
+            primaryKey: true,
         },
         product_id: {
             type: DataTypes.STRING,
@@ -21,11 +22,15 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         }
+    },{
+        tableName: 'orderDetail',
+        timestamps: false,
+        id:false
     });
 
     OrderDetail.associate = (models) => {
         OrderDetail.belongsTo(models.orders, {
-            foreignKey: 'orderDetails_order_fk',
+            foreignKey: 'order_id',
             as: 'orders',
         })
     }

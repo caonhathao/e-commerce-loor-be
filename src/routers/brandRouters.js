@@ -7,8 +7,12 @@ const express = require("express");
 const {createToken} = require("../security/JWTProvider");
 const router = express.Router();
 
+const multer = require("multer");
+const upload = multer();
+const authenticateToken = require("../security/JWTAuthentication");
+
 //post: sign-in and sign-up
-router.post('/api/brand-login', async (req, res) => {
+router.post('/api/brand-login', upload.none(), async (req, res) => {
     try {
         const brand = await brands.findOne({
             where: {
@@ -23,7 +27,9 @@ router.post('/api/brand-login', async (req, res) => {
                 res.status(401).json({message: 'Sign in failed! Invalid password'});
             } else {
                 const payload = {
-                    brandId: brand.id
+                    id: brand.id,
+                    name: brand.name,
+                    role: 'ROLE_VENDOR'
                 };
                 const token = createToken(payload, process.env.EXPIRES_IN_MONTH);
                 res.status(200).json(token);
@@ -34,8 +40,8 @@ router.post('/api/brand-login', async (req, res) => {
     }
 });
 
-//send otp code to authetication email and number phone (in handle)
-router.post('/api/create-brand', async (req, res) => {
+//send otp code to authentication email and number phone (in handle)
+router.post('/api/create-brand', upload.none(), async (req, res) => {
     try {
 
         const check = await brands.findOne({
@@ -67,7 +73,7 @@ router.post('/api/create-brand', async (req, res) => {
 
 //get: get all info or one
 //get one:
-router.get('/api/get-brand-by-id/:id', async (req, res) => {
+router.get('/api/get-brand-by-id/:id', authenticateToken, async (req, res) => {
     try {
         const brand = await brands.findOne({where: {id: req.params.id}});
         if (!brand) {
@@ -81,27 +87,40 @@ router.get('/api/get-brand-by-id/:id', async (req, res) => {
         });
     }
 });
+
 //get all:
-router.get('/api/manager/get-all-brands', async (req, res) => {
-    try {
-        const allBrands = await brands.findAll();
-        res.json(allBrands);
-    } catch (err) {
-        console.log(err)
-    }
+router.get('/api/manager/get-all-brands', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const allBrands = await brands.findAll();
+            res.json(allBrands);
+        } catch (err) {
+            console.log(err)
+        }
 })
 
-//put: update brand'info
-router.put('/api/brand-update/:id', async (req, res) => {
+//put: update brand's info
+router.put('/api/brand-update/:id', authenticateToken, upload.none(), async (req, res) => {
     try {
-        const brand = await brands.update(
-            req.body,
-            {where: {id: req.params.id}}
-        );
-        if (!brand) {
-            res.status(404).json({message: 'Update error! Please check your information again!'});
-        } else {
-            res.status(200).json({message: 'Update successful!'});
+        const updateFields = {};
+        if (req.body.numberphone && req.body.numberphone !== '') {
+            updateFields.numberphone = req.body.numberphone;
+        }
+        if (req.body.email && req.body.email !== '') {
+            updateFields.email = req.body.email;
+        }
+        if (Object.keys(updateFields).length > 0) {
+            const brand = await brands.update(
+                updateFields,
+                {where: {id: req.params.id}}
+            );
+            if (!brand) {
+                res.status(404).json({message: 'Update error! Please check your information again!'});
+            } else {
+                res.status(200).json({message: 'Update successful!'});
+            }
         }
     } catch (err) {
         console.log(err)
@@ -109,7 +128,21 @@ router.put('/api/brand-update/:id', async (req, res) => {
 })
 
 //put:lock brand
-router.put('/api/lock-brand-by-id/:id', async (req, res) => {
+router.put('/api/system/lock-brand-by-id/:id', async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            await brands.update({is_locked: true,}, {where: {id: req.params.id}});
+
+            res.status(200).json('Banned successfully');
+
+        } catch (err) {
+            res.status(500).json({message: 'error: ', error: err.message});
+        }
+})
+
+router.put('/api/manager/lock-brand-by-id/:id', authenticateToken, async (req, res) => {
     try {
         const brand = await brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
@@ -124,18 +157,21 @@ router.put('/api/lock-brand-by-id/:id', async (req, res) => {
 })
 
 //put: restore brand
-router.put('/api/restore-brand-by-id/:id', async (req, res) => {
-    try {
-        const brand = await brands.update({is_locked: false,}, {where: {id: req.params.id}});
+router.put('/api/restore-brand-by-id/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const brand = await brands.update({is_locked: false,}, {where: {id: req.params.id}});
 
-        if (!brand) {
-            res.status(404).json({message: 'No user with this id'});
+            if (!brand) {
+                res.status(404).json({message: 'No user with this id'});
+            }
+            res.status(200).json('successfully');
+
+        } catch (err) {
+            res.status(500).json({message: 'error: ', error: err.message});
         }
-        res.status(200).json('successfully');
-
-    } catch (err) {
-        res.status(500).json({message: 'error: ', error: err.message});
-    }
 })
 
 module.exports = router;
