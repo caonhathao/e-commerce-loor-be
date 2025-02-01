@@ -4,9 +4,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             primaryKey: true,
+            unique: true
         },
         user_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'users',
@@ -21,18 +22,24 @@ module.exports = (sequelize, DataTypes) => {
         status: {
             type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED'),
             allowNull: false,
+        },
+        createat:{
+            type: DataTypes.DATE,
+            allowNull: false,
+            default:DataTypes.NOW
         }
     },{
         tableName: 'orders',
+        timestamps:false
     });
 
     Orders.associate = (models) => {
         Orders.belongsTo(models.users, {
-            foreignKey: 'orders_user_fk',
+            foreignKey: 'user_id',
             as: 'users',
         })
         Orders.hasMany(models.orderDetail, {
-            foreignKey: 'orderDetails_order_fk',
+            foreignKey: 'id',
             as: 'OrderDetail',
         })
     };

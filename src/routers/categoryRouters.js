@@ -5,10 +5,8 @@ const router = _express.Router();
 const multer = require('multer');
 const upload = multer();
 
-
 const {categories, subCategories} = require('../models');
 const {createID} = require("../utils/global_functions");
-const {where} = require("sequelize");
 
 //GET DATA
 //get all categories
@@ -68,7 +66,7 @@ router.post('/api/manager/create-category', upload.none(), async (req, res) => {
 })
 
 //update category
-router.post('/api/manager/update-category/:id', upload.none(), async (req, res) => {
+router.put('/api/manager/update-category/:id', upload.none(), async (req, res) => {
     try {
         const category = await categories.update({
             name: req.body.name,

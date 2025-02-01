@@ -12,6 +12,10 @@ const dotenvExpand=require('dotenv-expand');
 app.use(_express.json());
 app.use(cors());
 
+//dotenv
+const myEnv = dotenv.config();
+dotenvExpand.expand(myEnv);
+
 //Routes
 const routersPath = path.join(__dirname, 'routers');
 
@@ -27,15 +31,15 @@ fs.readdirSync(routersPath).forEach((file) => {
 
 });
 
+db.sequelize.sync()
+    .then(() => {
+        const port = parseInt(process.env.SERVER_PORT) || 3000;
 
-db.sequelize.sync().then(() => {
-
-    const port = parseInt(process.env.SERVER_PORT);
-
-    app.listen(port, () => {
-
-        console.log("Server running on port: ", port);
-
+        app.listen(port, () => {
+            console.log("Server running on port:", port);
+        });
     })
-
-})
+    .catch((err) => {
+        console.error("Failed to sync database:", err.message);
+        process.exit(1);
+    });

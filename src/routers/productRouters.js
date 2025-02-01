@@ -3,6 +3,7 @@ const {products, brands} = require('../models');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
 const {createID} = require("../utils/global_functions");
+const {authenticate} = require("../security/JWTAuthentication");
 const router = _express.Router();
 const multer = require('multer');
 const upload = multer();
@@ -76,34 +77,37 @@ router.get('/api/get-product-by-key/:k', async (req, res) => {
 })
 
 //post: create new product
-router.post('/api/vendor/create-products', upload.none(), async (req, res) => {
-    try {
-        const product_id = createID(req.body.name);
-        console.log(product_id)
-        const newProduct = await products.create({
-            id: product_id,
-            category_id: req.body.category_id,
-            subcategory_id: req.body.subCategory_id,
-            brand_id: req.body.brand_id,
-            name: req.body.name,
-            origin: req.body.origin,
-            price: req.body.price,
-            description: req.body.description,
-            stock: req.body.stock,
-            status: req.body.status ?? 1,
-            promotion: req.body.promotion ?? 0
-        });
-        if (!newProduct) {
-            res.status(404).json({message: 'Create failed! Please check fields again!'});
+router.post('/api/vendor/create-products', authenticate, upload.none(), async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const product_id = createID(req.body.name);
+            console.log(product_id)
+            const newProduct = await products.create({
+                id: product_id,
+                category_id: req.body.category_id,
+                subcategory_id: req.body.subCategory_id,
+                brand_id: req.body.brand_id,
+                name: req.body.name,
+                origin: req.body.origin,
+                price: req.body.price,
+                description: req.body.description,
+                stock: req.body.stock,
+                status: req.body.status ?? 1,
+                promotion: req.body.promotion ?? 0
+            });
+            if (!newProduct) {
+                res.status(404).json({message: 'Create failed! Please check fields again!'});
+            }
+            res.status(200).json({message: 'Product created!'});
+        } catch (err) {
+            console.error(err);
         }
-        res.status(200).json({message: 'Product created!'});
-    } catch (err) {
-        console.error(err);
-    }
 })
 
-//post: hide/un-hide product
-router.post('/api/vendor/disabled-products/:status/:id', async (req, res) => {
+//put: hide/un-hide product
+router.put('/api/vendor/disabled-products/:status/:id', async (req, res) => {
     try {
         const product = await products.update(
             {status: req.params.status},
@@ -121,8 +125,8 @@ router.post('/api/vendor/disabled-products/:status/:id', async (req, res) => {
     }
 })
 
-//post: update product
-router.post('/api/vendor/update-product/:id', upload.none(), async (req, res) => {
+//put: update product
+router.put('/api/vendor/update-product/:id', upload.none(), async (req, res) => {
         try {
             const product = await products.findOne({
                 where: {
@@ -179,7 +183,7 @@ router.post('/api/vendor/update-product/:id', upload.none(), async (req, res) =>
                     res.status(200).json({message: 'Update successful!'});
                 }
             } else {
-                res.status(200).json({message: 'No changes detected!'});
+                res.status(403).json({message: 'No changes detected!'});
             }
         } catch (err) {
             console.error(err);
@@ -187,5 +191,20 @@ router.post('/api/vendor/update-product/:id', upload.none(), async (req, res) =>
         }
     }
 )
+
+//delete: delete product permanent
+router.delete('/api/vendor/delete-product/:id', async (req, res) => {
+    try {
+        const result = await products.destroy({
+            where: {id: req.params.id}
+        })
+        if (!result) {
+            res.status(404).json({message: 'No product found with this id'});
+        }
+        res.status(200).json({message: 'Product deleted!'});
+    } catch (err) {
+        console.error(err);
+    }
+})
 
 module.exports = router;

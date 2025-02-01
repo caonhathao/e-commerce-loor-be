@@ -25,7 +25,7 @@ router.post('/api/manager/create-sub-category/:id', async (req, res) => {
 })
 
 //Update sub category
-router.post('/api/manager/update-sub-category/:id', upload.none(), async (req, res) => {
+router.put('/api/manager/update-sub-category/:id', upload.none(), async (req, res) => {
     try {
         const result = await subCategories.update(
             {
