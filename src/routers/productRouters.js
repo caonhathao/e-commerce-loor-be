@@ -1,10 +1,11 @@
-// thses are all api for product
+// theses are all api for product
 const {products, brands} = require('../models');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
 const {createID} = require("../utils/global_functions");
-const {authenticate} = require("../security/JWTAuthentication");
 const router = _express.Router();
+
+const authenticateToken = require("../security/JWTAuthentication");
 const multer = require('multer');
 const upload = multer();
 
@@ -76,8 +77,8 @@ router.get('/api/get-product-by-key/:k', async (req, res) => {
     }
 })
 
-//post: create new product
-router.post('/api/vendor/create-products', authenticate, upload.none(), async (req, res) => {
+///post: create new product
+router.post('/api/vendor/create-products', authenticateToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
