@@ -46,23 +46,23 @@ module.exports = (sequelize, DataTypes) => {
 
     users.associate = (models) => {
         users.hasMany(models.addresses, {
-            foreignKey: 'address_user_fk',
+            foreignKey: 'user_id',
             as: 'address',
         })
         users.hasMany(models.payment, {
-            foreignKey: 'payment_user_fk',
+            foreignKey: 'user_id',
             as: 'payment',
         })
         users.hasMany(models.carts, {
-            foreignKey: 'carts_user_fk',
+            foreignKey: 'user_id',
             as: 'cart',
         })
         users.hasMany(models.reviews, {
-            foreignKey: 'review_user_fk',
+            foreignKey: 'user_id',
             as: 'reviews',
         })
         users.hasMany(models.notifications, {
-            foreignKey: 'notifications_user_fk',
+            foreignKey: 'user_id',
             as: 'notifications',
         })
         users.hasMany(models.orders, {

@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Payment.associate = (models) => {
         Payment.belongsTo(models.users, {
-            foreignKey: 'payment_user_fk',
+            foreignKey: 'user_id',
             as: 'users',
         })
     }

@@ -5,16 +5,16 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             references: {
                 model: "users",
-                key: 'ID',
+                key: 'id',
             },
             onDelete: "CASCADE",
         },
         product_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: "products",
-                key: 'ID',
+                key: 'id',
             }
         },
     },{
@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Carts.associate = (models) => {
         Carts.belongsTo(models.users, {
-            foreignKey: 'carts_user_fk',
+            foreignKey: 'user_id',
             as: 'users',
         })
     }

@@ -34,11 +34,11 @@ module.exports = (sequelize, DataTypes) => {
 
     Brand.associate = (models) => {
         Brand.hasMany(models.addresses, {
-            foreignKey: 'address_brand_fk',
+            foreignKey: 'brand_id',
             as: 'address',
         })
         Brand.hasMany(models.Chats, {
-            foreignKey: 'chat_support_brand_fk',
+            foreignKey: 'brand_id',
             as: 'chatSupport',
         })
         Brand.hasMany(models.products, {
@@ -46,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
             as: 'products',
         })
         Brand.hasMany(models.notifications, {
-            foreignKey: 'notifications_brand_fk',
+            foreignKey: 'brand_id',
             as: 'notifications',
         })
         Brand.hasOne(models.banned, {

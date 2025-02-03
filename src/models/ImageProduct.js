@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
     const ImageProduct = sequelize.define('imageProducts', {
         product_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'products',
@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
 
     ImageProduct.associate = (models) => {
         ImageProduct.belongsTo(models.products, {
-            foreignKey: 'images_product_fk',
+            foreignKey: 'product_id',
             as: 'products',
         })
     }
