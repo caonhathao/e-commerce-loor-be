@@ -5,15 +5,16 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             references: {
                 model: 'users',
-                key: 'ID',
+                key: 'id',
             },
+            onDelete: 'CASCADE',
         },
         product_id: {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
                 model: 'products',
-                key: 'ID',
+                key: 'id',
             },
             onDelete: "CASCADE",
         },
@@ -31,14 +32,15 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         tableName: 'reviews',
+        id: false
     });
     Review.associate = (models) => {
         Review.belongsTo(models.users, {
-            foreignKey: 'review_user_fk',
+            foreignKey: 'user_id',
             as: 'users',
         })
         Review.belongsTo(models.products, {
-            foreignKey: 'review_product_fk',
+            foreignKey: 'user_id',
             as: 'products',
         })
     };

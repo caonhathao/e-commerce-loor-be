@@ -4,7 +4,6 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
-            autoIncrement: true,
             primaryKey: true,
         },
         category_id: {
@@ -77,12 +76,12 @@ module.exports = (sequelize, DataTypes) => {
     Products.associate = (models) => {
 
         Products.hasMany(models.imageProducts, {
-            foreignKey: 'images_product_fk',
+            foreignKey: 'product_id',
             as: 'imageProducts',
         })
 
         Products.hasMany(models.reviews, {
-            foreignKey: 'review_product_fk',
+            foreignKey: 'product_id',
             as: 'reviews',
         })
 
