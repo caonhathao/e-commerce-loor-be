@@ -2,7 +2,6 @@
 const {createID, encryptPW} = require('../utils/global_functions');
 
 const {brands, users} = require('../models');
-const _express = require('express');
 const express = require("express");
 const {createToken} = require("../security/JWTProvider");
 const router = express.Router();
