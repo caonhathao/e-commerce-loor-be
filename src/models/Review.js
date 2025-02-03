@@ -6,8 +6,7 @@ module.exports = (sequelize, DataTypes) => {
             references: {
                 model: 'users',
                 key: 'id',
-            },
-            onDelete: 'CASCADE',
+            }
         },
         product_id: {
             type: DataTypes.STRING,
@@ -15,8 +14,7 @@ module.exports = (sequelize, DataTypes) => {
             references: {
                 model: 'products',
                 key: 'id',
-            },
-            onDelete: "CASCADE",
+            }
         },
         content: {
             type: DataTypes.STRING,

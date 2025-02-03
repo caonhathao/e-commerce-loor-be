@@ -1,6 +1,6 @@
 const _express = require('express');
 const router = _express.Router();
-const {subCategories} = require('../models');
+const {subCategories} = require('../models/_index');
 const {createID} = require('../utils/global_functions');
 const multer = require('multer');
 const upload = multer();

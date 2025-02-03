@@ -3,10 +3,11 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const app = _express();
-const db = require('./models');
+const db = require('./models/_index');
 
 const dotenv= require('dotenv');
 const dotenvExpand=require('dotenv-expand');
+const {DataTypes} = require("sequelize");
 
 //middleware
 app.use(_express.json());
@@ -18,17 +19,11 @@ dotenvExpand.expand(myEnv);
 
 //Routes
 const routersPath = path.join(__dirname, 'routers');
-
 fs.readdirSync(routersPath).forEach((file) => {
-
     if (file.endsWith('.js')) {
-
         const router = require(path.join(routersPath, file));
-
         app.use(router);
-
     }
-
 });
 
 db.sequelize.sync()

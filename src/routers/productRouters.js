@@ -1,5 +1,5 @@
 // theses are all api for product
-const {products, brands} = require('../models');
+const {products, brands} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
 const {createID} = require("../utils/global_functions");

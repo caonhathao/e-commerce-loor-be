@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             references: {
                 model: 'users',
-                key: 'ID'
+                key: 'id'
             }
         },
         brand_id: {
@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             references: {
                 model: 'brands',
-                key: 'ID'
+                key: 'id'
             }
         },
         content: {

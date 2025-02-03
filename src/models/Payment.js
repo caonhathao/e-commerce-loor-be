@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             references: {
                 model: "users",
-                key: 'ID',
+                key: 'id',
             },
             onDelete: "CASCADE",
         },

@@ -1,7 +1,7 @@
 /*these are all api to get and handle with brand */
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {brands, users} = require('../models');
+const {brands, users} = require('../models/_index');
 const express = require("express");
 const {createToken} = require("../security/JWTProvider");
 const router = express.Router();
