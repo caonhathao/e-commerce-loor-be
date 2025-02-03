@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {users, banned} = require('../models');
+const {users, banned} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();

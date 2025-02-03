@@ -1,7 +1,7 @@
 const _express = require('express');
 const router = _express.Router();
 
-const {orders, orderDetail, users} = require('../models');
+const {orders, orderDetail, users} = require('../models/_index');
 
 const {createID} = require("../utils/global_functions");
 

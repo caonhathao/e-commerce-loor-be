@@ -5,7 +5,7 @@ const router = _express.Router();
 const multer = require('multer');
 const upload = multer();
 
-const {categories, subCategories} = require('../models');
+const {categories, subCategories} = require('../models/_index');
 const {createID} = require("../utils/global_functions");
 
 //GET DATA

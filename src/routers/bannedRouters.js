@@ -4,7 +4,7 @@
 * Also, banned table will store brand's id, too.
  */
 
-const {banned} = require('../models');
+const {banned} = require('../models/_index');
 const _express = require('express');
 const router = _express.Router();
 

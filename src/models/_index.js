@@ -15,8 +15,10 @@ let sequelize;
 if (config.env) {
     sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
-    sequelize = new Sequelize(config.database,config.username,config.password, config);
+    sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
+
+const priorityModels = ['Users', 'Brands', 'Products'];
 
 fs
     .readdirSync(__dirname)
@@ -27,7 +29,11 @@ fs
             file.slice(-3) === '.js' &&
             file.indexOf('.test.js') === -1
         );
-    })
+    }).sort((a, b) => {
+    if (priorityModels.includes(a.replace('.js', ''))) return -1;
+    if (priorityModels.includes(b.replace('.js', ''))) return 1;
+    return 0;
+})
     .forEach(file => {
         const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
         db[model.name] = model;
@@ -39,7 +45,7 @@ Object.keys(db).forEach(modelName => {
     }
 });
 
-// console.log("Loaded models:", Object.keys(db));
+console.log("Loaded models:", Object.keys(db));
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
