@@ -150,6 +150,9 @@ router.put('/api/update-user-info/:id', authenticateToken, upload.none(), async 
         console.log(req.body);
         const updateFields = {};
 
+        if (req.body.full_name && req.body.full_name !== '') {
+            updateFields.full_name = req.body.full_name;
+        }
         if (req.body.account_name && req.body.account_name !== '') {
             updateFields.account_name = req.body.account_name;
         }
@@ -161,6 +164,9 @@ router.put('/api/update-user-info/:id', authenticateToken, upload.none(), async 
         }
         if (req.body.numberphone && req.body.numberphone !== '') {
             updateFields.numberphone = req.body.numberphone;
+        }
+        if (req.body.address && req.body.address !== '') {
+            updateFields.address = req.body.address;
         }
 
         if (Object.keys(updateFields).length > 0) {

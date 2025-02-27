@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        address: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         is_locked: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
@@ -33,10 +37,6 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Brand.associate = (models) => {
-        Brand.hasMany(models.addresses, {
-            foreignKey: 'brand_id',
-            as: 'address',
-        })
         Brand.hasMany(models.Chats, {
             foreignKey: 'brand_id',
             as: 'chatSupport',

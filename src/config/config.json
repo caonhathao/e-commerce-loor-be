@@ -2,7 +2,7 @@
   "development": {
     "username": "postgres",
     "password": "123456",
-    "database": "storemanagement",
+    "database": "e_commerce_floor",
     "schema": "store",
     "host": "localhost",
     "dialect": "postgres"
@@ -10,14 +10,14 @@
   "test": {
     "username": "postgres",
     "password": "123456",
-    "database": "storemanagement",
+    "database": "e_commerce_floor",
     "host": "localhost",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
     "password": "123456",
-    "database": "database_production",
+    "database": "e_commerce_floor",
     "host": "localhost",
     "dialect": "postgres"
   }

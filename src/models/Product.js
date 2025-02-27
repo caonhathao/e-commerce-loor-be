@@ -61,7 +61,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 0,
         },
         tags: {
-            type: DataTypes.STRING,
+            type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: true
         },
         pro_tsv: {

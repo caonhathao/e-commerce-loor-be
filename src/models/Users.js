@@ -30,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(11),
             allowNull: true,
         },
+        address: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         password: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -45,10 +49,6 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     users.associate = (models) => {
-        users.hasMany(models.addresses, {
-            foreignKey: 'user_id',
-            as: 'address',
-        })
         users.hasMany(models.payment, {
             foreignKey: 'user_id',
             as: 'payment',
