@@ -16,4 +16,9 @@ function encryptPW(str) {
     return crypto.createHash('sha256').update(str).digest('hex');
 }
 
-module.exports = {createID, encryptPW};
+function getPublicIdFromURL(url, assetFolder) {
+    const startIndex = url.lastIndexOf(assetFolder);
+    return url.substring(startIndex + assetFolder.length + 1, url.lastIndexOf('.'));
+}
+
+module.exports = {createID, encryptPW, getPublicIdFromURL};

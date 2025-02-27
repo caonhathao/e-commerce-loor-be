@@ -7,7 +7,7 @@ const upload = multer();
 
 //Post
 //Create new sub category
-router.post('/api/manager/create-sub-category/:id', async (req, res) => {
+router.post('/api/manager/create-sub-category', upload.none(), async (req, res) => {
     try {
         const id = createID(req.body.name);
         const sub = await subCategories.create({

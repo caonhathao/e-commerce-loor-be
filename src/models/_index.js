@@ -18,6 +18,7 @@ if (config.env) {
     sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
+//these models below need to create first
 const priorityModels = ['Users', 'Brands', 'Products'];
 
 fs

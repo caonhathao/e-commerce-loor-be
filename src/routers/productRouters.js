@@ -1,46 +1,65 @@
 // theses are all api for product
-const {products, brands} = require('../models/_index');
+const {products, brands, imageProducts} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
-const {createID} = require("../utils/global_functions");
+const {createID, getPublicIdFromURL} = require("../utils/global_functions");
 const router = _express.Router();
 
 const authenticateToken = require("../security/JWTAuthentication");
 const multer = require('multer');
+const {getIO} = require("../services/websocket");
+const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const upload = multer();
 
 //get all product from any vendor
-router.get('/api/get-all-products/:id', async (req, res) => {
-    try {
-        const vendor = await brands.findOne({where: {id: req.params.id}});
+router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const vendor = await brands.findOne({where: {id: req.params.id}});
 
-        if (!vendor) {
-            res.status(404).json({message: 'No brand found with this id'});
-        } else {
-            const allProd = await products.findAll(
-                {where: {brand_id: req.params.id}}
-            );
-            if (!allProd) {
-                res.status(404).json({message: 'No product found with this id'});
+            if (!vendor) {
+                res.status(404).json({message: 'No brand found with this id'});
             } else {
-                res.status(200).json(allProd);
+                //only get id, category, name, origin, price, stock and status
+                const allProd = await products.findAll(
+                    {
+                        where: {brand_id: req.params.id},
+                        attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
+                    }
+                );
+                if (!allProd) {
+                    res.status(404).json({message: 'No product found with this id'});
+                } else {
+                    res.status(200).json(allProd);
+                }
             }
+        } catch (err) {
+            console.error(err);
         }
-    } catch (err) {
-        console.error(err);
-    }
 });
 
 //get info from any product
 router.get('/api/get-product-by-id/:id', async (req, res) => {
     try {
-        const product = await products.findOne({where: {id: req.params.id}});
+        const product = await products.findOne({
+            where: {id: req.params.id},
+            include: [{
+                model: imageProducts, as: "imageProducts", attributes: {exclude: ['product_id']}
+            }],
+        });
+
         if (!product) {
-            res.status(404).json({message: 'No product found with this id'});
-        } else res.status(200).json(product);
+            return res.status(404).json({message: "No product found with this id"});
+        }
+
+        res.status(200).json(product);
     } catch (err) {
         console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
     }
+
 })
 
 //get products by price in range
@@ -77,31 +96,56 @@ router.get('/api/get-product-by-key/:k', async (req, res) => {
     }
 })
 
-///post: create new product
-router.post('/api/vendor/create-products', authenticateToken, upload.none(), async (req, res) => {
-    if (req.user.role !== 'ROLE_MANAGER') {
+//post: create new product
+router.post('/api/vendor/create-products', authenticateToken, upload.array('images', 10), async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const product_id = createID(req.body.name);
-            console.log(product_id)
-            const newProduct = await products.create({
-                id: product_id,
-                category_id: req.body.category_id,
-                subcategory_id: req.body.subCategory_id,
-                brand_id: req.body.brand_id,
-                name: req.body.name,
-                origin: req.body.origin,
-                price: req.body.price,
-                description: req.body.description,
-                stock: req.body.stock,
-                status: req.body.status ?? 1,
-                promotion: req.body.promotion ?? 0
-            });
-            if (!newProduct) {
-                res.status(404).json({message: 'Create failed! Please check fields again!'});
+            const product_id = req.body.id ? req.body.id : createID(req.body.name);
+            const tags = req.body.tags !== null || req.body.tags !== '' ? req.body.tags.split(",") : [];
+
+            if (!req.files || req.files.length === 0) {
+                console.log('files are required')
+            } else {
+                const imageUrl = await uploadToCloudinary(req.files, 'products');
+
+                if (!imageUrl) {
+                    res.status(404).json({message: 'Upload image files failed!'});
+                } else {
+                    const imageProduct = imageUrl.map((item) => {
+                        imageProducts.create({
+                            image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                            product_id: product_id,
+                            image_link: item,
+                        });
+                    })
+
+                    if (!imageProduct) {
+                        res.status(404).json({message: 'Upload Image failed! Please try again'});
+                    }
+
+                    const newProduct = await products.create({
+                        id: product_id,
+                        category_id: req.body.category_id,
+                        subcategory_id: req.body.subCategory_id,
+                        brand_id: req.user.id,
+                        name: req.body.name,
+                        origin: req.body.origin,
+                        price: req.body.price,
+                        description: req.body.description,
+                        stock: req.body.stock,
+                        status: req.body.status ?? 1,
+                        tags: tags,
+                    });
+
+                    if (!newProduct) {
+                        res.status(404).json({message: 'Create failed! Please check fields again!'});
+                    }
+
+                    res.status(200).json({message: 'Product created!'});
+                }
             }
-            res.status(200).json({message: 'Product created!'});
         } catch (err) {
             console.error(err);
         }
@@ -127,85 +171,137 @@ router.put('/api/vendor/disabled-products/:status/:id', async (req, res) => {
 })
 
 //put: update product
-router.put('/api/vendor/update-product/:id', upload.none(), async (req, res) => {
-        try {
-            const product = await products.findOne({
-                where: {
-                    id: req.params.id
-                }
-            });
-
-            if (!product) {
-                return res.status(404).json({message: 'Product not found!'});
-            }
-
-            const updateFields = {};
-
-            if (req.body.category_id && req.body.category_id !== '') {
-                updateFields.category_id = req.body.category_id;
-            }
-            if (req.body.subCategory_id && req.body.subCategory_id !== '') {
-                updateFields.subCategory_id = req.body.subCategory_id;
-            }
-            if (req.body.name && req.body.name !== '') {
-                updateFields.name = req.body.name;
-            }
-            if (req.body.origin && req.body.origin !== '') {
-                updateFields.origin = req.body.origin;
-            }
-            if (req.body.price && req.body.price !== '') {
-                updateFields.price = req.body.price;
-            }
-            if (req.body.description && req.body.description !== '') {
-                updateFields.description = req.body.description;
-            }
-            if (req.body.stock && req.body.stock !== '') {
-                updateFields.stock = req.body.stock;
-            }
-            if (req.body.status && req.body.status !== '') {
-                updateFields.status = req.body.status;
-            }
-            if (req.body.promotion && req.body.promotion !== '') {
-                updateFields.promotion = req.body.promotion;
-            }
-
-            console.log(req.body);
-
-            if (Object.keys(updateFields).length > 0) {
-                const update = await products.update(updateFields, {
+router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('images', 10), async (req, res) => {
+        console.log(req.body)
+        if (req.user.role !== 'ROLE_VENDOR') {
+            res.status(404).json({message: 'Access token is invalid'});
+        } else {
+            try {
+                const product = await products.findOne({
                     where: {
                         id: req.params.id
                     }
                 });
 
-                if (!update[0]) {
-                    res.status(404).json({message: 'Update failed! Please check fields again!'});
-                } else {
-                    res.status(200).json({message: 'Update successful!'});
+                if (!product) {
+                    return res.status(404).json({message: 'Product not found!'});
                 }
-            } else {
-                res.status(403).json({message: 'No changes detected!'});
+
+                const updateFields = {};
+
+                if (req.body.category_id && req.body.category_id !== '') {
+                    updateFields.category_id = req.body.category_id;
+                }
+                if (req.body.subCategory_id && req.body.subCategory_id !== '') {
+                    updateFields.subCategory_id = req.body.subCategory_id;
+                }
+                if (req.body.name && req.body.name !== '') {
+                    updateFields.name = req.body.name;
+                }
+                if (req.body.origin && req.body.origin !== '') {
+                    updateFields.origin = req.body.origin;
+                }
+                if (req.body.price && req.body.price !== '') {
+                    updateFields.price = req.body.price;
+                }
+                if (req.body.description && req.body.description !== '') {
+                    updateFields.description = req.body.description;
+                }
+                if (req.body.stock && req.body.stock !== '') {
+                    updateFields.stock = req.body.stock;
+                }
+                if (req.body.status && req.body.status !== '') {
+                    updateFields.status = req.body.status;
+                }
+                if (req.body.promotion && req.body.promotion !== '') {
+                    updateFields.promotion = req.body.promotion;
+                }
+
+                //update data in product table
+                if (Object.keys(updateFields).length > 0) {
+                    const update = await products.update(updateFields, {
+                        where: {
+                            id: req.params.id
+                        }
+                    });
+
+                    if (!update[0]) {
+                        res.status(404).json({message: 'Update failed! Please check fields again!'});
+                    } else {
+                        //after that, update image to imageProducts table
+                        //first, find and delete all publicID in req.body.deletedImage
+                        for (const image of JSON.parse(req.body["deletedImages"])) {
+                            const [effectRows] = await imageProducts.destroy({
+                                where: {image_id: image.image_id}
+                            })
+
+                            //if destroy successfully
+                            if (effectRows !== 0) {
+                                const res = await destroyToCloudinary(image.image_id);
+                                //when destroyed, cloudinary will send  a json with content: {'result':'ok}
+                                if (res === 'ok') console.log(`Image with public id: ${image.image_id} was deleted by vendor: ${req.user.id}`);
+                                else console.error(`Image with this public id: ${image.image_id} was not deleted!`)
+                            }
+                            //if not, return something like: status code and notify
+                            else {
+                                return res.status(500).json({message: 'Server error, please contact administrator'});
+                            }
+                        }
+
+                        //next, upload all image from req.body.images
+                        const imageUrl = await uploadToCloudinary(req.files, 'products');
+
+                        if (!imageUrl) {
+                            res.status(404).json({message: 'Upload image files failed!'});
+                        } else {
+                            const imageProduct = imageUrl.map((item) => {
+                                imageProducts.create({
+                                    image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                                    product_id: req.body.id,
+                                    image_link: item,
+                                });
+                            })
+
+                            if (!imageProduct) {
+                                res.status(404).json({message: 'Upload Image failed! Please try again'});
+                            }
+
+                            res.status(200).json({message: 'Update successful!'});
+                        }
+                    }
+                } else {
+                    res.status(403).json({message: 'No changes detected!'});
+                }
+            } catch
+                (err) {
+                console.error(err);
+                res.status(500).json({message: 'Internal server error'});
             }
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({message: 'Internal server error'});
         }
     }
 )
 
 //delete: delete product permanent
-router.delete('/api/vendor/delete-product/:id', async (req, res) => {
-    try {
-        const result = await products.destroy({
-            where: {id: req.params.id}
-        })
-        if (!result) {
-            res.status(404).json({message: 'No product found with this id'});
+router.delete('/api/vendor/delete-product/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const result = await products.destroy({
+                where: {id: req.params.id}
+            })
+            if (!result) {
+                res.status(404).json({message: 'No product found with this id'});
+            }
+
+            //running websocket event when delete successfully
+            const io = getIO();
+            io.emit('delete-product', {id: req.params.id});
+            res.status(200).json({message: 'Product deleted!'});
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({message: "Server error"});
         }
-        res.status(200).json({message: 'Product deleted!'});
-    } catch (err) {
-        console.error(err);
-    }
 })
 
 module.exports = router;

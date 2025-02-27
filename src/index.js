@@ -5,9 +5,11 @@ const path = require('path');
 const app = _express();
 const db = require('./models/_index');
 
-const dotenv= require('dotenv');
-const dotenvExpand=require('dotenv-expand');
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
 const {DataTypes} = require("sequelize");
+const {createServer} = require("node:http");
+const {initWebSocket} = require("./services/websocket");
 
 //middleware
 app.use(_express.json());
@@ -26,13 +28,18 @@ fs.readdirSync(routersPath).forEach((file) => {
     }
 });
 
+//create http server for websocket
+const server = createServer(app);
+
 db.sequelize.sync()
     .then(() => {
         const port = parseInt(process.env.SERVER_PORT) || 3000;
 
-        app.listen(port, () => {
+        server.listen(port, () => {
             console.log("Server running on port:", port);
         });
+
+        initWebSocket(server)
     })
     .catch((err) => {
         console.error("Failed to sync database:", err.message);

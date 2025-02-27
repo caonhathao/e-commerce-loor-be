@@ -67,17 +67,37 @@ router.post('/api/manager/create-category', upload.none(), async (req, res) => {
 
 //update category
 router.put('/api/manager/update-category/:id', upload.none(), async (req, res) => {
+    console.log(JSON.stringify(req.body));
     try {
-        const category = await categories.update({
-            name: req.body.name,
-            description: req.body.description,
-        }, {
-            where: {id: req.params.id}
+        const item = await categories.findOne({
+            where: {
+                id: req.params.id
+            }
         })
-        if (!category) {
-            res.status(404).json({message: 'Updating data failed'});
-        } else
-            res.status(200).json('Updated successfully');
+        if (!item) {
+            res.status(404).json({message: 'Category not found'});
+        }
+
+        const updateFields = {};
+
+        if (req.body.name && req.body.name !== '') {
+            updateFields['name'] = req.body.name;
+        }
+        if (req.body.description && req.body.description !== '') {
+            updateFields['description'] = req.body.description;
+        }
+
+        if (Object.keys(updateFields).length > 0) {
+
+            const [effectRows] = await categories.update(updateFields, {
+                where: {id: req.params.id}
+            })
+
+            if (effectRows === 0) {
+                res.status(500).json({message: 'Updating data failed'});
+            } else
+                res.status(200).json('Updated successfully');
+        }
     } catch (err) {
 
     }
