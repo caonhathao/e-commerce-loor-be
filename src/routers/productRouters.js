@@ -225,6 +225,7 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                         }
                     });
 
+
                     if (!update[0]) {
                         res.status(404).json({message: 'Update failed! Please check fields again!'});
                     } else {
