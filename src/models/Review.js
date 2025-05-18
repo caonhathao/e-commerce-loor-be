@@ -1,5 +1,11 @@
+const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
     const Review = sequelize.define('reviews', {
+        id:{
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false,
+        },
         user_id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -30,14 +36,19 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         tableName: 'reviews',
-        id: false
+        schema: 'store',
+        hooks: {
+            beforeCreate: (reviews, options) => {
+                reviews.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
+            }
+        }
     });
     Review.associate = (models) => {
-        Review.belongsTo(models.users, {
+        Review.belongsTo(models.Users, {
             foreignKey: 'user_id',
             as: 'users',
         })
-        Review.belongsTo(models.products, {
+        Review.belongsTo(models.Products, {
             foreignKey: 'user_id',
             as: 'products',
         })

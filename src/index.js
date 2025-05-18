@@ -2,24 +2,22 @@ const _express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const app = _express();
-const db = require('./models/_index');
-
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
-const {DataTypes} = require("sequelize");
-const {createServer} = require("node:http");
-const {initWebSocket} = require("./services/websocket");
+const { createServer } = require('node:http');
+const { initWebSocket } = require('./services/websocket');
+const { Sequelize } = require('sequelize');
+const { Umzug, SequelizeStorage } = require('umzug');
 
-//middleware
-app.use(_express.json());
-app.use(cors());
-
-//dotenv
+// Load biến môi trường
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
-//Routes
+const app = _express();
+app.use(_express.json());
+app.use(cors());
+
+// Load routes
 const routersPath = path.join(__dirname, 'routers');
 fs.readdirSync(routersPath).forEach((file) => {
     if (file.endsWith('.js')) {
@@ -28,20 +26,23 @@ fs.readdirSync(routersPath).forEach((file) => {
     }
 });
 
-//create http server for websocket
+// Tạo HTTP server (cho WebSocket)
 const server = createServer(app);
 
-db.sequelize.sync()
+// Chạy migration rồi khởi động server
+const runMigrations = require('./migrate');
+runMigrations()
     .then(() => {
-        const port = parseInt(process.env.SERVER_PORT) || 3000;
+        console.log('✅ Migrations completed');
 
+        const port = parseInt(process.env.SERVER_PORT) || 3000;
         server.listen(port, () => {
-            console.log("Server running on port:", port);
+            console.log('🚀 Server running on port:', port);
         });
 
-        initWebSocket(server)
+        initWebSocket(server);
     })
     .catch((err) => {
-        console.error("Failed to sync database:", err.message);
+        console.error('❌ Migration failed:', err.message);
         process.exit(1);
     });

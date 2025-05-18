@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Orders = sequelize.define('orders', {
+    const Orders = sequelize.define('Orders', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             references: {
                 model: 'users',
-                key: 'ID',
+                key: 'id',
             },
             onDelete: 'CASCADE',
         },
@@ -34,14 +34,19 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Orders.associate = (models) => {
-        Orders.belongsTo(models.users, {
+        Orders.belongsTo(models.Users, {
             foreignKey: 'user_id',
             as: 'users',
         })
-        Orders.hasMany(models.orderDetail, {
+        Orders.hasMany(models.OrderDetail, {
             foreignKey: 'id',
             as: 'OrderDetail',
         })
+        Orders.hasOne(models.BillPayment, {
+            foreignKey: 'order_id',
+            as: 'BillPayment',
+            }
+        )
     };
     return Orders;
 };

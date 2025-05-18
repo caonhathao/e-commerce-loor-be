@@ -1,8 +1,8 @@
 // theses are all api for product
-const {products, brands, imageProducts} = require('../models/_index');
+const {Products, Brands, ImageProduct} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
-const {createID, getPublicIdFromURL} = require("../utils/global_functions");
+const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
 const authenticateToken = require("../security/JWTAuthentication");
@@ -12,18 +12,18 @@ const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/upload
 const upload = multer();
 
 //get all product from any vendor
-router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
+router.get('/api/get-all-Products/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const vendor = await brands.findOne({where: {id: req.params.id}});
+            const vendor = await Brands.findOne({where: {id: req.params.id}});
 
             if (!vendor) {
                 res.status(404).json({message: 'No brand found with this id'});
             } else {
                 //only get id, category, name, origin, price, stock and status
-                const allProd = await products.findAll(
+                const allProd = await Products.findAll(
                     {
                         where: {brand_id: req.params.id},
                         attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
@@ -43,10 +43,10 @@ router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
 //get info from any product
 router.get('/api/get-product-by-id/:id', async (req, res) => {
     try {
-        const product = await products.findOne({
+        const product = await Products.findOne({
             where: {id: req.params.id},
             include: [{
-                model: imageProducts, as: "imageProducts", attributes: {exclude: ['product_id']}
+                model: ImageProduct, as: "ImageProduct", attributes: {exclude: ['product_id']}
             }],
         });
 
@@ -62,11 +62,11 @@ router.get('/api/get-product-by-id/:id', async (req, res) => {
 
 })
 
-//get products by price in range
+//get Products by price in range
 router.get('/api/get-product-by-price/:p1/:p2', async (req, res) => {
     try {
         console.log(req.params.p1);
-        const result = await products.findAll({
+        const result = await Products.findAll({
             where: {
                 price: {
                     [Op.between]: [parseInt(req.params.p1), parseInt(req.params.p2)]
@@ -81,11 +81,11 @@ router.get('/api/get-product-by-price/:p1/:p2', async (req, res) => {
     }
 });
 
-//get products by keyword
+//get Products by keyword
 router.get('/api/get-product-by-key/:k', async (req, res) => {
     try {
         const key = req.params.k.toLowerCase();
-        const results = await products.findAll({
+        const results = await Products.findAll({
             where: Sequelize.literal(`pro_tsv @@ plainto_tsquery('vn_unaccent', '${key}')`),
         });
 
@@ -97,36 +97,25 @@ router.get('/api/get-product-by-key/:k', async (req, res) => {
 })
 
 //post: create new product
-router.post('/api/vendor/create-products', authenticateToken, upload.array('images', 10), async (req, res) => {
+router.post('/api/vendor/create-Products', authenticateToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const product_id = req.body.id ? req.body.id : createID(req.body.name);
             const tags = req.body.tags !== null || req.body.tags !== '' ? req.body.tags.split(",") : [];
 
             if (!req.files || req.files.length === 0) {
                 console.log('files are required')
+                res.status(404).json({message: 'Can not found image files!'});
             } else {
                 const imageUrl = await uploadToCloudinary(req.files, 'products');
+                console.log(imageUrl);
 
                 if (!imageUrl) {
                     res.status(404).json({message: 'Upload image files failed!'});
                 } else {
-                    const imageProduct = imageUrl.map((item) => {
-                        imageProducts.create({
-                            image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
-                            product_id: product_id,
-                            image_link: item,
-                        });
-                    })
-
-                    if (!imageProduct) {
-                        res.status(404).json({message: 'Upload Image failed! Please try again'});
-                    }
-
-                    const newProduct = await products.create({
-                        id: product_id,
+                    const newProduct = await Products.create({
+                        id: generateID('PROD'),
                         category_id: req.body.category_id,
                         subcategory_id: req.body.subCategory_id,
                         brand_id: req.user.id,
@@ -141,9 +130,20 @@ router.post('/api/vendor/create-products', authenticateToken, upload.array('imag
 
                     if (!newProduct) {
                         res.status(404).json({message: 'Create failed! Please check fields again!'});
-                    }
+                    } else {
+                        const imageProduct = imageUrl.map((item) => {
+                            ImageProduct.create({
+                                id: createID('IMG'),
+                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                                product_id: newProduct.id,
+                                image_link: item,
+                            });
+                        })
 
-                    res.status(200).json({message: 'Product created!'});
+                        if (!imageProduct) {
+                            res.status(404).json({message: 'Upload Image failed! Please try again'});
+                        } else res.status(200).json({message: 'Product created!'});
+                    }
                 }
             }
         } catch (err) {
@@ -152,9 +152,9 @@ router.post('/api/vendor/create-products', authenticateToken, upload.array('imag
 })
 
 //put: hide/un-hide product
-router.put('/api/vendor/disabled-products/:status/:id', async (req, res) => {
+router.put('/api/vendor/disabled-Products/:status/:id', async (req, res) => {
     try {
-        const product = await products.update(
+        const product = await Products.update(
             {status: req.params.status},
             {
                 where: {id: req.params.id}
@@ -177,7 +177,7 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
             res.status(404).json({message: 'Access token is invalid'});
         } else {
             try {
-                const product = await products.findOne({
+                const product = await Products.findOne({
                     where: {
                         id: req.params.id
                     }
@@ -219,7 +219,7 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
 
                 //update data in product table
                 if (Object.keys(updateFields).length > 0) {
-                    const update = await products.update(updateFields, {
+                    const update = await Products.update(updateFields, {
                         where: {
                             id: req.params.id
                         }
@@ -229,10 +229,10 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                     if (!update[0]) {
                         res.status(404).json({message: 'Update failed! Please check fields again!'});
                     } else {
-                        //after that, update image to imageProducts table
+                        //after that, update image to ImageProduct table
                         //first, find and delete all publicID in req.body.deletedImage
                         for (const image of JSON.parse(req.body["deletedImages"])) {
-                            const [effectRows] = await imageProducts.destroy({
+                            const [effectRows] = await ImageProduct.destroy({
                                 where: {image_id: image.image_id}
                             })
 
@@ -240,8 +240,8 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                             if (effectRows !== 0) {
                                 const res = await destroyToCloudinary(image.image_id);
                                 //when destroyed, cloudinary will send  a json with content: {'result':'ok}
-                                if (res === 'ok') console.log(`Image with public id: ${image.image_id} was deleted by vendor: ${req.user.id}`);
-                                else console.error(`Image with this public id: ${image.image_id} was not deleted!`)
+                                if (res === 'ok') console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
+                                else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
                             }
                             //if not, return something like: status code and notify
                             else {
@@ -250,13 +250,13 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                         }
 
                         //next, upload all image from req.body.images
-                        const imageUrl = await uploadToCloudinary(req.files, 'products');
+                        const imageUrl = await uploadToCloudinary(req.files, 'Products');
 
                         if (!imageUrl) {
                             res.status(404).json({message: 'Upload image files failed!'});
                         } else {
                             const imageProduct = imageUrl.map((item) => {
-                                imageProducts.create({
+                                ImageProduct.create({
                                     image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
                                     product_id: req.body.id,
                                     image_link: item,
@@ -288,7 +288,7 @@ router.delete('/api/vendor/delete-product/:id', authenticateToken, async (req, r
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const result = await products.destroy({
+            const result = await Products.destroy({
                 where: {id: req.params.id}
             })
             if (!result) {

@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Category = sequelize.define('categories', {
+    const Category = sequelize.define('Category', {
         id: {
             type: DataTypes.STRING,
             primaryKey: true,
@@ -15,16 +15,16 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'none',
         }
     }, {
-        tableName: 'categories',
+        tableName: 'category',
         schema: 'store',
         timestamps: false,
     });
     Category.associate = (models) => {
-        Category.hasMany(models.subCategories, {
+        Category.hasMany(models.SubCategory, {
             foreignKey: 'category_id',
-            as: 'subCategories',
+            as: 'sub_category',
         })
-        Category.hasMany(models.products, {
+        Category.hasMany(models.Products, {
             foreignKey: 'category_id',
             as: 'products',
         })

@@ -5,14 +5,14 @@ const router = _express.Router();
 const multer = require('multer');
 const upload = multer();
 
-const {categories, subCategories} = require('../models/_index');
+const {Category, SubCategory} = require('../models/_index');
 const {createID} = require("../utils/global_functions");
 
 //GET DATA
-//get all categories
-router.get('/api/categories', async (req, res) => {
+//get all Category
+router.get('/api/Category', async (req, res) => {
     try {
-        const allCategory = await categories.findAll();
+        const allCategory = await Category.findAll();
         if (!allCategory) {
             res.status(404).json({message: 'Fetching data failed'});
         } else res.status(200).json(allCategory);
@@ -21,10 +21,10 @@ router.get('/api/categories', async (req, res) => {
     }
 });
 
-//get all sub-categories from any categories
-router.get('/api/categories/sub-categories/:id', async (req, res) => {
+//get all sub-Category from any Category
+router.get('/api/Category/sub-Category/:id', async (req, res) => {
     try {
-        const result = await categories.findOne({
+        const result = await Category.findOne({
             where: {
                 id: req.params.id
             }
@@ -32,14 +32,14 @@ router.get('/api/categories/sub-categories/:id', async (req, res) => {
         if (!result) {
             res.status(404).json({message: 'Fetching data failed'});
         } else {
-            const sub = await subCategories.findAll({
+            const sub = await SubCategory.findAll({
                     where: {
                         category_id: result.id
                     }
                 }
             );
             if (!sub) {
-                res.status(404).json({message: 'Has no sub categories found '});
+                res.status(404).json({message: 'Has no sub Category found '});
             } else res.status(200).json(sub);
         }
     } catch (err) {
@@ -51,10 +51,11 @@ router.get('/api/categories/sub-categories/:id', async (req, res) => {
 //create new category
 router.post('/api/manager/create-category', upload.none(), async (req, res) => {
     try {
-        const idCategory = createID(req.body.name);
-        const newCategory = await categories.create({
+        const idCategory = createID('CAT');
+        const newCategory = await Category.create({
             id: idCategory,
             name: req.body.name,
+            description: req.body.description,
         })
         if (!newCategory) {
             res.status(404).json({message: 'Create category failed'});
@@ -69,7 +70,7 @@ router.post('/api/manager/create-category', upload.none(), async (req, res) => {
 router.put('/api/manager/update-category/:id', upload.none(), async (req, res) => {
     console.log(JSON.stringify(req.body));
     try {
-        const item = await categories.findOne({
+        const item = await Category.findOne({
             where: {
                 id: req.params.id
             }
@@ -89,7 +90,7 @@ router.put('/api/manager/update-category/:id', upload.none(), async (req, res) =
 
         if (Object.keys(updateFields).length > 0) {
 
-            const [effectRows] = await categories.update(updateFields, {
+            const [effectRows] = await Category.update(updateFields, {
                 where: {id: req.params.id}
             })
 
@@ -106,7 +107,7 @@ router.put('/api/manager/update-category/:id', upload.none(), async (req, res) =
 //DELETE
 router.delete('/api/manager/delete-category/:id', async (req, res) => {
     try {
-        const category = await categories.destroy({
+        const category = await Category.destroy({
             where: {id: req.params.id}
         });
         if (!category) {

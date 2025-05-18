@@ -1,6 +1,7 @@
 const {Sequelize} = require("sequelize");
+const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
-    const Products = sequelize.define('products', {
+    const Products = sequelize.define('Products', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -18,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: true,
             references: {
-                model: 'subcategories',
+                model: 'sub_categories',
                 key: 'id',
             },
         },
@@ -38,22 +39,19 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        price: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
         description: {
             type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        stock: {
-            type: DataTypes.INTEGER,
             allowNull: false,
         },
         status: {
             type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
             allowNull: true,
             defaultValue: '1',
+        },
+        otherVariant:{
+            type:DataTypes.BOOLEAN,
+            allowNull:false,
+            defaultValue:false,
         },
         promotion: {
             type: DataTypes.INTEGER,
@@ -65,19 +63,30 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         pro_tsv: {
-            type: Sequelize.literal('tsvector'),
+            type: 'TSVECTOR',
             allowNull: true,
-        }
+        },
     }, {
         tableName: 'products',
-        timestamps: false
+        schema: 'store',
+        timestamps: true,
+        hooks: {
+            beforeCreate: (product, options) => {
+                product.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
+            }
+        }
     });
 
     Products.associate = (models) => {
 
-        Products.hasMany(models.imageProducts, {
+        Products.hasMany(models.ImageProduct, {
             foreignKey: 'product_id',
-            as: 'imageProducts',
+            as: 'image_products',
+        })
+
+        Products.hasMany(models.ProductVariants, {
+            foreignKey: 'product_id',
+            as: 'product_variants',
         })
 
         Products.hasMany(models.reviews, {
@@ -85,17 +94,17 @@ module.exports = (sequelize, DataTypes) => {
             as: 'reviews',
         })
 
-        Products.belongsTo(models.categories, {
+        Products.belongsTo(models.Category, {
             foreignKey: 'category_id',
             as: 'categories'
         });
 
-        Products.belongsTo(models.subCategories, {
+        Products.belongsTo(models.SubCategory, {
             foreignKey: 'subcategory_id',
-            as: 'subCategories'
+            as: 'sub_categories'
         });
 
-        Products.belongsTo(models.brands, {
+        Products.belongsTo(models.Brands, {
             foreignKey: 'brand_id',
             as: 'brands'
         });

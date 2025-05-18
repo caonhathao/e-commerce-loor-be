@@ -1,5 +1,7 @@
+const { nanoid } = require('nanoid');
+
 module.exports = (sequelize, DataTypes) => {
-    const users = sequelize.define('users', {
+    const Users = sequelize.define('Users', {
         id: {
             allowNull: false,
             primaryKey: true,
@@ -21,17 +23,8 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        role: {
-            type: DataTypes.ENUM('ROLE_USER', 'ROLE_BRAND', 'ROLE_MANAGER'),
-            allowNull: false,
-            defaultValue: 'ROLE_USER',
-        },
         numberphone: {
             type: DataTypes.STRING(11),
-            allowNull: true,
-        },
-        address: {
-            type: DataTypes.STRING,
             allowNull: true,
         },
         password: {
@@ -45,35 +38,49 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: 'users',
-        timestamps: false
+        schema: 'store',
+        timestamps: true,
+        hooks: {
+            beforeCreate: (user, options) => {
+                user.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
+            }
+        }
     });
 
-    users.associate = (models) => {
-        users.hasMany(models.payment, {
+    Users.associate = (models) => {
+        Users.hasMany(models.BillPayment, {
             foreignKey: 'user_id',
-            as: 'payment',
+            as: 'bill_payment',
         })
-        users.hasMany(models.carts, {
+        Users.hasMany(models.Carts, {
             foreignKey: 'user_id',
             as: 'cart',
         })
-        users.hasMany(models.reviews, {
+        Users.hasMany(models.shopping_log, {
+            foreignKey: 'user_id',
+            as: 'shopping_log',
+        })
+        Users.hasMany(models.reviews, {
             foreignKey: 'user_id',
             as: 'reviews',
         })
-        users.hasMany(models.notifications, {
+        Users.hasMany(models.Notification, {
             foreignKey: 'user_id',
             as: 'notifications',
         })
-        users.hasMany(models.orders, {
+        Users.hasMany(models.Orders, {
             foreignKey: 'user_id',
             as: 'orders',
         })
-        users.hasOne(models.banned, {
+        Users.hasOne(models.Banned, {
             foreignKey: 'user_id',
             as: 'banned',
         })
+        Users.hasMany(models.shipping_address, {
+            foreignKey: 'user_id',
+            as: 'shipping_address',
+        })
     };
 
-    return users;
+    return Users;
 }

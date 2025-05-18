@@ -1,15 +1,12 @@
 const crypto = require('crypto');
+const {v4: uuidv4} = require('uuid');
 
 function createID(str) {
-    let newID = '';
+    return str+'-'+uuidv4().split('-')[0];
+}
 
-    for (let i = str.length - 1; i >= str.length - 5; i--) {
-        if (i % 2 !== 0) {
-            newID += str[i];
-        } else newID += str.charCodeAt(i);
-    }
-
-    return newID;
+function generateID(str) {
+    return str+'-'+uuidv4();
 }
 
 function encryptPW(str) {
@@ -21,4 +18,4 @@ function getPublicIdFromURL(url, assetFolder) {
     return url.substring(startIndex + assetFolder.length + 1, url.lastIndexOf('.'));
 }
 
-module.exports = {createID, encryptPW, getPublicIdFromURL};
+module.exports = {createID,generateID, encryptPW, getPublicIdFromURL};
