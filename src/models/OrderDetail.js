@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const OrderDetail = sequelize.define('orderDetail', {
+    const OrderDetail = sequelize.define('OrderDetail', {
         order_id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -10,9 +10,13 @@ module.exports = (sequelize, DataTypes) => {
             onDelete: 'CASCADE',
             primaryKey: true,
         },
-        product_id: {
+        variant_id:{
             type: DataTypes.STRING,
             allowNull: false,
+            references: {
+                model: 'product_variants',
+                key: 'sku',
+            }
         },
         amount: {
             type: DataTypes.INTEGER,
@@ -23,13 +27,14 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         }
     },{
-        tableName: 'orderDetail',
+        tableName: 'order_detail',
+        schema: 'store',
         timestamps: false,
         id:false
     });
 
     OrderDetail.associate = (models) => {
-        OrderDetail.belongsTo(models.orders, {
+        OrderDetail.belongsTo(models.Orders, {
             foreignKey: 'order_id',
             as: 'orders',
         })

@@ -1,6 +1,6 @@
 const cloudinary = require('../config/cloudinary');
 
-const uploadToCloudinary = async (fileBuffer, assetName) => {
+const   uploadToCloudinary = async (fileBuffer, assetName) => {
     try {
         const handleUpdate = fileBuffer.map((item) => {
             return new Promise((resolve, reject) => {
@@ -12,6 +12,7 @@ const uploadToCloudinary = async (fileBuffer, assetName) => {
                     },
                     (error, result) => {
                         if (error) {
+                            console.error(error);
                             reject(error);
                         } else {
                             resolve(result.secure_url);

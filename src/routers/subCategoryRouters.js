@@ -1,6 +1,6 @@
 const _express = require('express');
 const router = _express.Router();
-const {subCategories} = require('../models/_index');
+const {SubCategory} = require('../models/_index');
 const {createID} = require('../utils/global_functions');
 const multer = require('multer');
 const upload = multer();
@@ -9,11 +9,12 @@ const upload = multer();
 //Create new sub category
 router.post('/api/manager/create-sub-category', upload.none(), async (req, res) => {
     try {
-        const id = createID(req.body.name);
-        const sub = await subCategories.create({
+        const id = createID('SUB-CAT');
+        const sub = await SubCategory.create({
             id: id,
             category_id: req.body.category_id,
             name: req.body.name,
+            description: req.body.description,
         });
         if (!sub) {
             res.status(404).json('Creating failed!');
@@ -27,7 +28,7 @@ router.post('/api/manager/create-sub-category', upload.none(), async (req, res) 
 //Update sub category
 router.put('/api/manager/update-sub-category/:id', upload.none(), async (req, res) => {
     try {
-        const result = await subCategories.update(
+        const result = await SubCategory.update(
             {
                 category_id: req.body.category_id,
                 name: req.body.name,
@@ -50,7 +51,7 @@ router.put('/api/manager/update-sub-category/:id', upload.none(), async (req, re
 //Get all sub categories from any parent-category with category_id:
 router.get('/api/manager/get-all-sub-from-category/:id', async (req, res) => {
     try {
-        const result = await subCategories.findAll({
+        const result = await SubCategory.findAll({
             where: {
                 category_id: req.params.id,
             }
@@ -66,7 +67,7 @@ router.get('/api/manager/get-all-sub-from-category/:id', async (req, res) => {
 //Get any sub category's info
 router.get('/api/manager/get-sub-category/:id', async (req, res) => {
     try {
-        const result = await subCategories.findOne({
+        const result = await SubCategory.findOne({
             where: {
                 id: req.params.id
             }
@@ -83,7 +84,7 @@ router.get('/api/manager/get-sub-category/:id', async (req, res) => {
 //delete any sub category by id
 router.delete('/api/manager/delete-sub-category/:id', async (req, res) => {
     try {
-        const result = await subCategories.destroy({
+        const result = await SubCategory.destroy({
             where: {
                 id: req.params.id
             }

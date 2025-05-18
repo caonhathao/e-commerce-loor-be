@@ -1,7 +1,7 @@
 /*these are all api to get and handle with brand */
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {brands, users} = require('../models/_index');
+const {Brands, users} = require('../models/_index');
 const express = require("express");
 const {createToken} = require("../security/JWTProvider");
 const router = express.Router();
@@ -15,7 +15,7 @@ const {getIO} = require("../services/websocket");
 //post: sign-in and sign-up
 router.post('/api/brand-login', upload.none(), async (req, res) => {
     try {
-        const brand = await brands.findOne({
+        const brand = await Brands.findOne({
             where: {
                 email: req.body.email,
             }
@@ -44,15 +44,15 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
 //send otp code to authentication email and number phone (in handle)
 router.post('/api/create-brand', upload.none(), async (req, res) => {
     try {
-        const check = await brands.findOne({
+        const check = await Brands.findOne({
             where: {
                 email: req.body.email,
             }
         })
 
         if (!check) {
-            const brand_id = createID(req.body.name ?? req.body.numberphone);
-            const newBrand = await brands.create({
+            const brand_id = createID('BRAND');
+            const newBrand = await Brands.create({
                 id: brand_id,
                 name: req.body.name ? req.body.name : brand_id,
                 password: encryptPW(req.body.password),
@@ -78,7 +78,7 @@ router.post('/api/brand/authenticate/:userId', authenticateToken, async (req, re
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const brand = await brands.findOne({where: {id: req.params.userId}});
+            const brand = await Brands.findOne({where: {id: req.params.userId}});
             if (!brand) {
                 res.status(404).json({message: 'This brand was not found'});
             }
@@ -97,7 +97,7 @@ router.get('/api/get-brand-by-id/:id', authenticateToken, async (req, res) => {
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const brand = await brands.findOne({where: {id: req.params.id}, attributes: {exclude: ['password']},});
+            const brand = await Brands.findOne({where: {id: req.params.id}, attributes: {exclude: ['password']},});
             if (!brand) {
                 res.status(404).json({message: 'No brand with this id: ' + req.params.id});
             } else {
@@ -116,7 +116,7 @@ router.get('/api/manager/get-all-brands', authenticateToken, async (req, res) =>
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const allBrands = await brands.findAll();
+            const allBrands = await Brands.findAll();
             res.json(allBrands);
         } catch (err) {
             console.log(err)
@@ -169,7 +169,7 @@ router.put('/api/brand-update/:id', authenticateToken, upload.none(), async (req
             }
 
             if (Object.keys(updateFields).length > 0) {
-                const brand = await brands.update(
+                const brand = await Brands.update(
                     updateFields,
                     {where: {id: req.params.id}}
                 );
@@ -190,7 +190,7 @@ router.put('/api/system/lock-brand-by-id/:id', async (req, res) => {
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            await brands.update({is_locked: true,}, {where: {id: req.params.id}});
+            await Brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
             res.status(200).json('Banned successfully');
 
@@ -201,7 +201,7 @@ router.put('/api/system/lock-brand-by-id/:id', async (req, res) => {
 
 router.put('/api/manager/lock-brand-by-id/:id', authenticateToken, async (req, res) => {
     try {
-        const brand = await brands.update({is_locked: true,}, {where: {id: req.params.id}});
+        const brand = await Brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
         if (!brand) {
             res.status(404).json({message: 'No brand with this id'});
@@ -219,7 +219,7 @@ router.put('/api/restore-brand-by-id/:id', authenticateToken, async (req, res) =
         res.status(404).json({message: 'Access token is invalid'});
     } else
         try {
-            const brand = await brands.update({is_locked: false,}, {where: {id: req.params.id}});
+            const brand = await Brands.update({is_locked: false,}, {where: {id: req.params.id}});
 
             if (!brand) {
                 res.status(404).json({message: 'No user with this id'});

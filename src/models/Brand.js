@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Brand = sequelize.define('brands', {
+    const Brand = sequelize.define('Brands', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -41,15 +41,15 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'brand_id',
             as: 'chatSupport',
         })
-        Brand.hasMany(models.products, {
+        Brand.hasMany(models.Products, {
             foreignKey: 'brand_id',
             as: 'products',
         })
-        Brand.hasMany(models.notifications, {
+        Brand.hasMany(models.Notification, {
             foreignKey: 'brand_id',
             as: 'notifications',
         })
-        Brand.hasOne(models.banned, {
+        Brand.hasOne(models.Banned, {
             foreignKey: 'brand_id',
             as: 'banned',
         })

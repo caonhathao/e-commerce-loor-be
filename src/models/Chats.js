@@ -28,13 +28,14 @@ module.exports=(sequelize,DataTypes) => {
         }
     },{
         tableName: 'chats',
+        schema: 'store',
     });
     ChatSupport.associate = function(models) {
-        ChatSupport.belongsTo(models.users,{
+        ChatSupport.belongsTo(models.Users,{
             foreignKey:'user_id',
             as : 'users',
         })
-        ChatSupport.belongsTo(models.brands,{
+        ChatSupport.belongsTo(models.Brands,{
             foreignKey:'brand_id',
             as: 'brands',
         })
