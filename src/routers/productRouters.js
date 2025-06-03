@@ -14,7 +14,7 @@ const upload = multer();
 //get all product from any vendor
 router.get('/api/get-all-Products/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'Access token is invalid'});
+        res.status(404).json({message:'You are not authorized to view this page'});
     } else
         try {
             const vendor = await Brands.findOne({where: {id: req.params.id}});
@@ -46,7 +46,7 @@ router.get('/api/get-product-by-id/:id', async (req, res) => {
         const product = await Products.findOne({
             where: {id: req.params.id},
             include: [{
-                model: ImageProduct, as: "ImageProduct", attributes: {exclude: ['product_id']}
+                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
             }],
         });
 
@@ -192,8 +192,8 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                 if (req.body.category_id && req.body.category_id !== '') {
                     updateFields.category_id = req.body.category_id;
                 }
-                if (req.body.subCategory_id && req.body.subCategory_id !== '') {
-                    updateFields.subCategory_id = req.body.subCategory_id;
+                if (req.body.subcategory_id && req.body.subcategory_id !== '') {
+                    updateFields.subcategory_id = req.body.subcategory_id;
                 }
                 if (req.body.name && req.body.name !== '') {
                     updateFields.name = req.body.name;
@@ -201,20 +201,20 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                 if (req.body.origin && req.body.origin !== '') {
                     updateFields.origin = req.body.origin;
                 }
-                if (req.body.price && req.body.price !== '') {
-                    updateFields.price = req.body.price;
+                if (req.body.status && req.body.status !== '') {
+                    updateFields.status = req.body.status;
                 }
                 if (req.body.description && req.body.description !== '') {
                     updateFields.description = req.body.description;
                 }
-                if (req.body.stock && req.body.stock !== '') {
-                    updateFields.stock = req.body.stock;
-                }
-                if (req.body.status && req.body.status !== '') {
-                    updateFields.status = req.body.status;
-                }
                 if (req.body.promotion && req.body.promotion !== '') {
                     updateFields.promotion = req.body.promotion;
+                }
+                if(req.body.otherVariant && req.body.otherVariant !== '') {
+                    updateFields.otherVariant = req.body.otherVariant;
+                }
+                if (req.body.tags && req.body.tags !== '') {
+                    updateFields.tags = req.body.tags.split(",");
                 }
 
                 //update data in product table
@@ -231,23 +231,25 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                     } else {
                         //after that, update image to ImageProduct table
                         //first, find and delete all publicID in req.body.deletedImage
-                        for (const image of JSON.parse(req.body["deletedImages"])) {
-                            const [effectRows] = await ImageProduct.destroy({
-                                where: {image_id: image.image_id}
-                            })
+                       if(req.body['deletedImages']){
+                           for (const image of JSON.parse(req.body["deletedImages"])) {
+                               const [effectRows] = await ImageProduct.destroy({
+                                   where: {image_id: image.image_id}
+                               })
 
-                            //if destroy successfully
-                            if (effectRows !== 0) {
-                                const res = await destroyToCloudinary(image.image_id);
-                                //when destroyed, cloudinary will send  a json with content: {'result':'ok}
-                                if (res === 'ok') console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
-                                else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
-                            }
-                            //if not, return something like: status code and notify
-                            else {
-                                return res.status(500).json({message: 'Server error, please contact administrator'});
-                            }
-                        }
+                               //if destroy successfully
+                               if (effectRows !== 0) {
+                                   const res = await destroyToCloudinary(image.image_id);
+                                   //when destroyed, cloudinary will send  a json with content: {'result':'ok}
+                                   if (res === 'ok') console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
+                                   else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
+                               }
+                               //if not, return something like: status code and notify
+                               else {
+                                   return res.status(500).json({message: 'Server error, please contact administrator'});
+                               }
+                           }
+                       }
 
                         //next, upload all image from req.body.images
                         const imageUrl = await uploadToCloudinary(req.files, 'Products');

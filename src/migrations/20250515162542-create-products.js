@@ -21,7 +21,6 @@ module.exports = {
             brand_id: {
                 type: Sequelize.STRING,
                 allowNull: false,
-
             },
             name: {
                 type: Sequelize.STRING,
@@ -39,6 +38,11 @@ module.exports = {
                 type: Sequelize.ENUM('1', '0'), //1 is showing, 0 is disabled
                 allowNull: true,
                 defaultValue: '1',
+            },
+            stock:{
+              type: Sequelize.NUMBER,
+              allowNull: false,
+              defaultValue: 0,
             },
             otherVariant: {
                 type: Sequelize.BOOLEAN,
