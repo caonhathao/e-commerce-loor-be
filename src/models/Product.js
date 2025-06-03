@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         pro_tsv: {
-            type: 'TSVECTOR',
+            type: DataTypes.TSVECTOR,
             allowNull: true,
         },
     }, {

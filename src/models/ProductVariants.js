@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         tableName: 'product_variants',
         schema: 'store',
+        timestamps: true,
         hooks: {
             beforeCreate: (product_variant, options) => {
                 product_variant.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
