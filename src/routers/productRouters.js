@@ -12,7 +12,7 @@ const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/upload
 const upload = multer();
 
 //get all product from any vendor
-router.get('/api/get-all-Products/:id', authenticateToken, async (req, res) => {
+router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message:'You are not authorized to view this page'});
     } else
