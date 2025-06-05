@@ -14,8 +14,10 @@ function encryptPW(str) {
 }
 
 function getPublicIdFromURL(url, assetFolder) {
+    console.log('getPublicIdFromURL', url, assetFolder);
     const startIndex = url.lastIndexOf(assetFolder);
-    return url.substring(startIndex + assetFolder.length + 1, url.lastIndexOf('.'));
+    console.log(startIndex);
+    return url.substring(startIndex, url.lastIndexOf('.'));
 }
 
 module.exports = {createID,generateID, encryptPW, getPublicIdFromURL};

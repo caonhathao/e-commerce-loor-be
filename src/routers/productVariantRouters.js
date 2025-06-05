@@ -15,7 +15,6 @@ router.get('/api/get-all-variants/:id', authenticateToken, async (req, res) => {
         res.status(404).json({message: 'You are not authorized to view this page'});
     } else {
         try {
-
             const allVariants = await ProductVariants.findAll(
                 {
                     where: {product_id: req.params.id},
@@ -35,6 +34,28 @@ router.get('/api/get-all-variants/:id', authenticateToken, async (req, res) => {
     }
 })
 
+//get any variant's information
+router.get('/api/get-variant-by-id/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(404).json({message: 'You are not authorized to view this page'});
+    } else {
+        try {
+            const variant = await ProductVariants.findOne(
+                {
+                    where: {id: req.params.id}
+                }
+            )
+
+            if (!variant) {
+                res.status(404).json({message: 'No variant found with this id'});
+            } else res.status(200).json(variant);
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({message: 'Internal server error'});
+        }
+    }
+})
+
 //create new variants by vendor
 router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none(), async (req, res) => {
     console.log(req.body);
@@ -48,6 +69,8 @@ router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none
                 sku: req.body.sku,
                 price: req.body.price,
                 stock: req.body.stock,
+                name: req.body.name,
+                status: req.body.status,
             });
 
             if (!newVariant) {
@@ -58,7 +81,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none
                         id: req.params.id
                     }
                 });
-
+                console.log(product.dataValues.stock);
                 if (!product) {
                     return res.status(404).json({message: 'Product not found!'});
                 }
@@ -67,6 +90,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none
                     {stock: product.stock + req.body.stock},
                     {where: {id: req.params.id}}
                 );
+                console.log(updatedProduct);
                 if (!updatedProduct) {
                     res.status(404).json({message: 'Create failed! Can not update the total stock of this product'});
                 } else res.status(202).json({message: 'Created new variant successfully!'});
@@ -79,7 +103,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none
 })
 
 //update variant's information
-router.put('/api/vendor/update-variant-with-id/:prodId/:variantId', authenticateToken,upload.none(), async (req, res) => {
+router.put('/api/vendor/update-variant-with-id/:variantId', authenticateToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});
     } else {
@@ -102,9 +126,9 @@ router.put('/api/vendor/update-variant-with-id/:prodId/:variantId', authenticate
                     }
                 });
 
-                if (update[0]===0) {
+                if (update[0] === 0) {
                     res.status(404).json({message: 'Update failed'});
-                } else res.status(202).json({message: 'Update variant successfully!'});
+                } else res.status(200).json({message: 'Update variant successfully!'});
             }
 
         } catch (e) {

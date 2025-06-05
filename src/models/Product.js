@@ -2,80 +2,101 @@ const {Sequelize} = require("sequelize");
 const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
     const Products = sequelize.define('Products', {
-        id: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            primaryKey: true,
-        },
-        category_id: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: {
-                model: 'categories',
-                key: 'id',
+                id: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    primaryKey: true,
+                },
+                category_id: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    references: {
+                        model: 'categories',
+                        key: 'id',
+                    },
+                },
+                subcategory_id: {
+                    type: DataTypes.STRING,
+                    allowNull: true,
+                    references: {
+                        model: 'sub_categories',
+                        key: 'id',
+                    },
+                },
+                brand_id: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    references: {
+                        model: 'brands',
+                        key: 'id',
+                    },
+                },
+                name: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
+                origin: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
+                description: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                },
+                status: {
+                    type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
+                    allowNull: true,
+                    defaultValue: '1',
+                },
+                stock: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                },
+                otherVariant:
+                    {
+                        type: DataTypes.BOOLEAN,
+                        allowNull:
+                            false,
+                        defaultValue:
+                            false,
+                    }
+                ,
+                promotion: {
+                    type: DataTypes.INTEGER,
+                    allowNull:
+                        true,
+                    defaultValue:
+                        0,
+                }
+                ,
+                tags: {
+                    type: DataTypes.ARRAY(DataTypes.STRING),
+                    allowNull:
+                        true
+                }
+                ,
+                pro_tsv: {
+                    type: DataTypes.TSVECTOR,
+                    allowNull:
+                        true,
+                }
+                ,
             },
-        },
-        subcategory_id: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            references: {
-                model: 'sub_categories',
-                key: 'id',
-            },
-        },
-        brand_id: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: {
-                model: 'brands',
-                key: 'id',
-            },
-        },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        origin: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        description: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        status: {
-            type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
-            allowNull: true,
-            defaultValue: '1',
-        },
-        otherVariant:{
-            type:DataTypes.BOOLEAN,
-            allowNull:false,
-            defaultValue:false,
-        },
-        promotion: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            defaultValue: 0,
-        },
-        tags: {
-            type: DataTypes.ARRAY(DataTypes.STRING),
-            allowNull: true
-        },
-        pro_tsv: {
-            type: DataTypes.TSVECTOR,
-            allowNull: true,
-        },
-    }, {
-        tableName: 'products',
-        schema: 'store',
-        timestamps: true,
-        hooks: {
-            beforeCreate: (product, options) => {
-                product.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
+            {
+                tableName: 'products',
+                schema:
+                    'store',
+                timestamps:
+                    true,
+                hooks:
+                    {
+                        beforeCreate: (product, options) => {
+                            product.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
+                        }
+                    }
             }
-        }
-    });
+        )
+    ;
 
     Products.associate = (models) => {
 
