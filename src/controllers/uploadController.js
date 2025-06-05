@@ -31,6 +31,7 @@ const   uploadToCloudinary = async (fileBuffer, assetName) => {
 };
 
 const destroyToCloudinary = async (publicId) => {
+    console.log(publicId);
     try {
         return await cloudinary.uploader.destroy(publicId, {resource_type: "image"});
     } catch (err) {

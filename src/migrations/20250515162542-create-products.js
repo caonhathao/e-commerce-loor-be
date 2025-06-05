@@ -40,7 +40,7 @@ module.exports = {
                 defaultValue: '1',
             },
             stock:{
-              type: Sequelize.NUMBER,
+              type: Sequelize.INTEGER,
               allowNull: false,
               defaultValue: 0,
             },

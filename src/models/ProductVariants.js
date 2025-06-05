@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: 'CASCADE',
         },
+        name:{
+            type:DataTypes.STRING,
+            allowNull: false,
+        },
         sku: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -27,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         stock: {
             type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        status:{
+            type:DataTypes.BOOLEAN,
             allowNull: false,
         }
     }, {

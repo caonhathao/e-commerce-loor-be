@@ -14,7 +14,7 @@ const upload = multer();
 //get all product from any vendor
 router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message:'You are not authorized to view this page'});
+        res.status(404).json({message: 'You are not authorized to view this page'});
     } else
         try {
             const vendor = await Brands.findOne({where: {id: req.params.id}});
@@ -49,7 +49,6 @@ router.get('/api/get-product-by-id/:id', async (req, res) => {
                 model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
             }],
         });
-
         if (!product) {
             return res.status(404).json({message: "No product found with this id"});
         }
@@ -65,7 +64,6 @@ router.get('/api/get-product-by-id/:id', async (req, res) => {
 //get Products by price in range
 router.get('/api/get-product-by-price/:p1/:p2', async (req, res) => {
     try {
-        console.log(req.params.p1);
         const result = await Products.findAll({
             where: {
                 price: {
@@ -105,11 +103,9 @@ router.post('/api/vendor/create-Products', authenticateToken, upload.array('imag
             const tags = req.body.tags !== null || req.body.tags !== '' ? req.body.tags.split(",") : [];
 
             if (!req.files || req.files.length === 0) {
-                console.log('files are required')
                 res.status(404).json({message: 'Can not found image files!'});
             } else {
                 const imageUrl = await uploadToCloudinary(req.files, 'products');
-                console.log(imageUrl);
 
                 if (!imageUrl) {
                     res.status(404).json({message: 'Upload image files failed!'});
@@ -172,7 +168,6 @@ router.put('/api/vendor/disabled-Products/:status/:id', async (req, res) => {
 
 //put: update product
 router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('images', 10), async (req, res) => {
-        console.log(req.body)
         if (req.user.role !== 'ROLE_VENDOR') {
             res.status(404).json({message: 'Access token is invalid'});
         } else {
@@ -210,7 +205,7 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                 if (req.body.promotion && req.body.promotion !== '') {
                     updateFields.promotion = req.body.promotion;
                 }
-                if(req.body.otherVariant && req.body.otherVariant !== '') {
+                if (req.body.otherVariant && req.body.otherVariant !== '') {
                     updateFields.otherVariant = req.body.otherVariant;
                 }
                 if (req.body.tags && req.body.tags !== '') {
@@ -225,52 +220,55 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                         }
                     });
 
-
                     if (!update[0]) {
                         res.status(404).json({message: 'Update failed! Please check fields again!'});
                     } else {
                         //after that, update image to ImageProduct table
                         //first, find and delete all publicID in req.body.deletedImage
-                       if(req.body['deletedImages']){
-                           for (const image of JSON.parse(req.body["deletedImages"])) {
-                               const [effectRows] = await ImageProduct.destroy({
-                                   where: {image_id: image.image_id}
-                               })
-
-                               //if destroy successfully
-                               if (effectRows !== 0) {
-                                   const res = await destroyToCloudinary(image.image_id);
-                                   //when destroyed, cloudinary will send  a json with content: {'result':'ok}
-                                   if (res === 'ok') console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
-                                   else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
-                               }
-                               //if not, return something like: status code and notify
-                               else {
-                                   return res.status(500).json({message: 'Server error, please contact administrator'});
-                               }
-                           }
-                       }
-
-                        //next, upload all image from req.body.images
-                        const imageUrl = await uploadToCloudinary(req.files, 'Products');
-
-                        if (!imageUrl) {
-                            res.status(404).json({message: 'Upload image files failed!'});
-                        } else {
-                            const imageProduct = imageUrl.map((item) => {
-                                ImageProduct.create({
-                                    image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
-                                    product_id: req.body.id,
-                                    image_link: item,
-                                });
-                            })
-
-                            if (!imageProduct) {
-                                res.status(404).json({message: 'Upload Image failed! Please try again'});
+                        if (req.body.deletedImages) {
+                            for (const image of JSON.parse(req.body["deletedImages"])) {
+                                //if destroy successfully
+                                const res = await destroyToCloudinary(image.image_id);
+                                console.error(res)
+                                //when destroyed, cloudinary will send  a json with content: {'result':'ok}
+                                if (res.result === 'ok') {
+                                    console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
+                                    const effectRows = await ImageProduct.destroy({
+                                        where: {image_id: image.image_id}
+                                    })
+                                    if (effectRows > 0) {
+                                        console.log('Effect Rows deleted');
+                                    } else res.status(404).json({message: 'Effect Rows deleted'});
+                                } else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
                             }
-
-                            res.status(200).json({message: 'Update successful!'});
                         }
+                        //if not, return something like: status code and notify
+                        else {
+                            return res.status(500).json({message: 'Server error, please contact administrator'});
+                        }
+                    }
+
+
+                    //next, upload all image from req.body.images
+                    const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_P);
+
+                    if (!imageUrl) {
+                        res.status(404).json({message: 'Upload image files failed!'});
+                    } else {
+                        const imageProduct = imageUrl.map((item) => {
+                            ImageProduct.create({
+                                id: generateID('IMG'),
+                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                                product_id: req.body.id,
+                                image_link: item,
+                            });
+                        })
+
+                        if (!imageProduct) {
+                            res.status(404).json({message: 'Upload Image failed! Please try again'});
+                        }
+
+                        res.status(200).json({message: 'Update successful!'});
                     }
                 } else {
                     res.status(403).json({message: 'No changes detected!'});
