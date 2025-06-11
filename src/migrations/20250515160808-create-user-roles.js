@@ -15,7 +15,9 @@ module.exports = {
         references: {
           model: 'users',
           key: 'id',
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
       },
       role: {
         type: Sequelize.ENUM('ROLE_USER', 'ROLE_BRAND', 'ROLE_MANAGER'),

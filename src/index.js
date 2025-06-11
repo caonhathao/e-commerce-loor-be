@@ -7,15 +7,15 @@ const dotenvExpand = require('dotenv-expand');
 const { createServer } = require('node:http');
 const { initWebSocket } = require('./services/websocket');
 const { Sequelize } = require('sequelize');
-const { Umzug, SequelizeStorage } = require('umzug');
+const cookieParser = require('cookie-parser');
 
-// Load biến môi trường
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
 const app = _express();
 app.use(_express.json());
 app.use(cors());
+app.use(cookieParser());
 
 // Load routes
 const routersPath = path.join(__dirname, 'routers');
