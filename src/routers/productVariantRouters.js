@@ -4,13 +4,13 @@ const {Op, Sequelize} = require('sequelize');
 const {generateID} = require('../utils/global_functions');
 const router = _express.Router();
 
-const {authenticateToken} = require('../security/JWTAuthentication')
+const {authenticateToken, authenticateAccessToken} = require('../security/JWTAuthentication')
 const multer = require('multer');
 const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/uploadController');
 const upload = multer();
 
 //get all product's variants by vendor
-router.get('/api/get-all-variants/:id', authenticateToken, async (req, res) => {
+router.get('/api/get-all-variants/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});
     } else {
@@ -57,7 +57,7 @@ router.get('/api/get-variant-by-id/:id', authenticateToken, async (req, res) => 
 })
 
 //create new variants by vendor
-router.post('/api/vendor/create-new-variant/:id', authenticateToken, upload.none(), async (req, res) => {
+router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     console.log(req.body);
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});

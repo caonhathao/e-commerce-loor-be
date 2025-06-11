@@ -29,21 +29,31 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
             if (brand.password !== encryptPW(req.body.password)) {
                 res.status(401).json({message: 'Sign in failed! Invalid password'});
             } else {
-                const payload = {id: brand.id, locked: brand.is_locked};
-                const brandData = {id: brand.id, locked: brand.is_locked};
+                const payload = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked};
+                const brandData = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked};
 
-                const refreshToken = generateRefreshToken(payload);
-                const accessToken = generateAccessToken(payload);
+                let refreshToken;
+                let accessToken;
 
                 const validate = await ValidateToken({userId: brand.id});
                 if (validate) {
+                    refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
                     const response = await TokenUpdate({
                         userID: brand.id,
                         token: refreshToken,
                         req: req,
                         timer: process.env.EXPIRE_IN_WEEK,
                     });
+                    if (!response) {
+                        res.status(404).json({message: 'Sign in failed! Can not generate token'});
+                    } else {
+                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                        sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
+                    }
                 } else {
+                    refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
+                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+
                     await TokenTracking({
                         userID: brand.id,
                         userType: 'brand',
@@ -93,8 +103,8 @@ router.post('/api/create-brand', upload.none(), async (req, res) => {
             }
         }
 
-        const payload = {id: newBrand.id, locked: newBrand.is_locked};
-        const brandData = {id: newBrand.id, locked: newBrand.is_locked};
+        const payload = {id: newBrand.id, role: 'ROLE_VENDOR', locked: newBrand.is_locked};
+        const brandData = {id: newBrand.id, role: 'ROLE_VENDOR', locked: newBrand.is_locked};
 
         const refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
         const accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);

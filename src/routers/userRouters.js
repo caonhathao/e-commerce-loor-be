@@ -15,7 +15,7 @@ const {authenticateToken} = require("../security/JWTAuthentication");
 const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
 const authUtils = require('..//utils/authUtils')
 const {sendAuthResponse} = require("../utils/authUtils");
-const {TokenTracking, TokenUpdate} = require("../security/TokenTracking");
+const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 
 
 //get user(s)
@@ -150,20 +150,37 @@ router.post('/api/user-login', upload.none(), async (req, res) => {
                     locked: user.is_locked,
                 }
 
-                const refreshToken = generateRefreshToken(payload);
-                const accessToken = generateAccessToken(payload);
+                let refreshToken;
+                let accessToken;
 
-                const response = await TokenUpdate({
-                    userID: user.id,
-                    token: refreshToken,
-                    req: req,
-                    timer: process.env.EXPIRE_IN_WEEK,
-                });
-                if (!response) {
-                    res.status(404).json({message: 'Sign in failed! Can not generate token'});
+                const validate = await ValidateToken({userId: user.id});
+                if (validate) {
+                    refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
+
+                    const response = await TokenUpdate({
+                        userID: user.id,
+                        token: refreshToken,
+                        req: req,
+                        timer: process.env.EXPIRE_IN_WEEK,
+                    });
+                    if (!response) {
+                        res.status(404).json({message: 'Sign in failed! Can not generate token'});
+                    } else {
+                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                        sendAuthResponse(res, userData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
+                    }
+                } else {
+                    refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
+                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                    await TokenTracking({
+                        userID: user.id,
+                        userType: 'user',
+                        token: refreshToken,
+                        req: req,
+                        timer: process.env.EXPIRE_IN_WEEK,
+                    })
+                    sendAuthResponse(res, userData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
                 }
-
-                sendAuthResponse(res, userData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
             }
         }
     } catch (err) {

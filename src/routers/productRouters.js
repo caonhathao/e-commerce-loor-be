@@ -5,14 +5,14 @@ const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
-const {authenticateToken} = require("../security/JWTAuthentication");
+const {authenticateAccessToken,authenticateToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const upload = multer();
 
 //get all product from any vendor
-router.get('/api/get-all-products/:id', authenticateToken, async (req, res) => {
+router.get('/api/get-all-products/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});
     } else
@@ -95,7 +95,7 @@ router.get('/api/get-product-by-key/:k', async (req, res) => {
 })
 
 //post: create new product
-router.post('/api/vendor/create-Products', authenticateToken, upload.array('images', 10), async (req, res) => {
+router.post('/api/vendor/create-products', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
