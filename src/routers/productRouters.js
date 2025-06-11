@@ -5,7 +5,7 @@ const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
-const authenticateToken = require("../security/JWTAuthentication");
+const {authenticateToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
@@ -119,7 +119,7 @@ router.post('/api/vendor/create-Products', authenticateToken, upload.array('imag
                         origin: req.body.origin,
                         price: req.body.price,
                         description: req.body.description,
-                        stock: req.body.stock,
+                        stock: req.body.stock ?? 0,
                         status: req.body.status ?? 1,
                         tags: tags,
                     });
@@ -225,7 +225,7 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                     } else {
                         //after that, update image to ImageProduct table
                         //first, find and delete all publicID in req.body.deletedImage
-                        if (req.body.deletedImages) {
+                        if (req.body.deletedImages && req.body.deletedImages.length > 0) {
                             for (const image of JSON.parse(req.body["deletedImages"])) {
                                 //if destroy successfully
                                 const res = await destroyToCloudinary(image.image_id);
@@ -241,10 +241,6 @@ router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('im
                                     } else res.status(404).json({message: 'Effect Rows deleted'});
                                 } else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
                             }
-                        }
-                        //if not, return something like: status code and notify
-                        else {
-                            return res.status(500).json({message: 'Server error, please contact administrator'});
                         }
                     }
 

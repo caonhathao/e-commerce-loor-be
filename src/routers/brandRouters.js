@@ -3,14 +3,16 @@ const {createID, encryptPW} = require('../utils/global_functions');
 
 const {Brands, users} = require('../models/_index');
 const express = require("express");
-const {createToken} = require("../security/JWTProvider");
+const {createToken, generateRefreshToken, generateAccessToken} = require("../security/JWTProvider");
 const router = express.Router();
 
 const multer = require("multer");
 const upload = multer();
-const authenticateToken = require("../security/JWTAuthentication");
+const {authenticateToken} = require("../security/JWTAuthentication");
 const {Sequelize} = require("sequelize");
 const {getIO} = require("../services/websocket");
+const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
+const {sendAuthResponse} = require("../utils/authUtils");
 
 //post: sign-in and sign-up
 router.post('/api/brand-login', upload.none(), async (req, res) => {
@@ -27,13 +29,30 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
             if (brand.password !== encryptPW(req.body.password)) {
                 res.status(401).json({message: 'Sign in failed! Invalid password'});
             } else {
-                const payload = {
-                    id: brand.id,
-                    name: brand.name,
-                    role: 'ROLE_VENDOR'
-                };
-                const token = createToken(payload, process.env.EXPIRES_IN_MONTH);
-                res.status(200).json(token);
+                const payload = {id: brand.id, locked: brand.is_locked};
+                const brandData = {id: brand.id, locked: brand.is_locked};
+
+                const refreshToken = generateRefreshToken(payload);
+                const accessToken = generateAccessToken(payload);
+
+                const validate = await ValidateToken({userId: brand.id});
+                if (validate) {
+                    const response = await TokenUpdate({
+                        userID: brand.id,
+                        token: refreshToken,
+                        req: req,
+                        timer: process.env.EXPIRE_IN_WEEK,
+                    });
+                } else {
+                    await TokenTracking({
+                        userID: brand.id,
+                        userType: 'brand',
+                        token: refreshToken,
+                        req: req,
+                        timer: process.env.EXPIRE_IN_WEEK,
+                    })
+                    sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
+                }
             }
         }
     } catch (err) {
@@ -44,15 +63,10 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
 //send otp code to authentication email and number phone (in handle)
 router.post('/api/create-brand', upload.none(), async (req, res) => {
     try {
-        const check = await Brands.findOne({
-            where: {
-                email: req.body.email,
-            }
-        })
-
-        if (!check) {
+        let newBrand = {};
+        try {
             const brand_id = createID('BRAND');
-            const newBrand = await Brands.create({
+            newBrand = await Brands.create({
                 id: brand_id,
                 name: req.body.name ? req.body.name : brand_id,
                 password: encryptPW(req.body.password),
@@ -61,34 +75,43 @@ router.post('/api/create-brand', upload.none(), async (req, res) => {
                 is_locked: true, //when the brand (vendor) updates their address, their account will be unlocked
             });
 
-            if (!newBrand) {
-                console.log(newBrand);
+        } catch (err) {
+            if (err.name === 'SequelizeUniqueConstraintError') {
+                const emailErr = err.errors.find(err => err.path === 'email');
+                if (emailErr) {
+                    res.status(404).json({message: 'This email is already in use'});
+                }
+                const nameErr = err.errors.find(err => err.path === 'name');
+                if (nameErr) {
+                    res.status(404).json({message: 'This brand name is already in use'});
+                }
             } else {
-                res.status(200).json({message: 'Sign up successful! Please sign-in again'});
+                console.error(err);
+                res.status(500).json({
+                    message: 'Error creating brand, ', error: err.message
+                });
             }
-        } else res.status(404).json({message: 'Register failed! This email is already in use'});
+        }
+
+        const payload = {id: newBrand.id, locked: newBrand.is_locked};
+        const brandData = {id: newBrand.id, locked: newBrand.is_locked};
+
+        const refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
+        const accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+
+        await TokenTracking({
+            userID: newBrand.id,
+            userType: 'brand',
+            token: refreshToken,
+            req: req,
+            timer: process.env.EXPIRE_IN_WEEK,
+        })
+        sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
+
     } catch (err) {
         console.log(err)
     }
 });
-
-//post: verify account for vendor
-router.post('/api/brand/authenticate/:userId', authenticateToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'Access token is invalid'});
-    } else
-        try {
-            const brand = await Brands.findOne({where: {id: req.params.userId}});
-            if (!brand) {
-                res.status(404).json({message: 'This brand was not found'});
-            }
-            if (brand.password !== encryptPW(req.body.password)) {
-                res.status(401).json({message: 'Password is incorrect'});
-            } else res.status(200).json({message: 'Verify successful!'});
-        } catch (err) {
-            console.log(err)
-        }
-})
 
 //get: get all info or one
 //get one:

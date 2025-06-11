@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const authenticateToken = (req, res, next) => {
+function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader.split(' ')[1];
 
@@ -18,4 +18,23 @@ const authenticateToken = (req, res, next) => {
     })
 }
 
-module.exports = authenticateToken;
+function authenticateAccessToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+        return res.status(401).json({message: 'Access token not found'});
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY, (err, user) => {
+            if (err) {
+                return res.status(403).json({message: err.message});
+            }
+            req.user = user;
+            next();
+        });
+    } catch (err) {
+        return res.status(403).json({message: 'Access token is invalid or expired'});
+    }
+}
+
+module.exports = {authenticateToken, authenticateAccessToken};

@@ -4,7 +4,7 @@ const {Op, Sequelize} = require('sequelize');
 const {generateID} = require('../utils/global_functions');
 const router = _express.Router();
 
-const authenticateToken = require('../security/JWTAuthentication')
+const {authenticateToken} = require('../security/JWTAuthentication')
 const multer = require('multer');
 const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/uploadController');
 const upload = multer();

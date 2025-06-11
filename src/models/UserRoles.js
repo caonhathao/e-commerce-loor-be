@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
                     key: 'id',
                 },
                 onDelete: 'CASCADE',
+                onUpdate: 'CASCADE',
             },
             role: {
                 type: DataTypes.ENUM('ROLE_USER', 'ROLE_BRAND', 'ROLE_MANAGER'),
