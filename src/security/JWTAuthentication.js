@@ -33,6 +33,7 @@ function authenticateAccessToken(req, res, next) {
             next();
         });
     } catch (err) {
+        console.error('err: ', err)
         return res.status(403).json({message: 'Access token is invalid or expired'});
     }
 }

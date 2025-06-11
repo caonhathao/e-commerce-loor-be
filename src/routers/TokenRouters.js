@@ -12,6 +12,7 @@ const {generateAccessToken, generateRefreshToken} = require('../security/JWTProv
 const {verify, sign} = require("jsonwebtoken");
 const {TokenUpdate} = require("../security/TokenTracking");
 const ms = require("ms");
+const {sendAuthResponse} = require("../utils/authUtils");
 
 const {REFRESH_SECRET_KEY} = process.env;
 router.post('/api/refresh', async (req, res) => {
@@ -39,7 +40,7 @@ router.post('/api/refresh', async (req, res) => {
             return res.status(401).send('Invalid refresh token');
         }
 
-        const payload = {userId: decoded.id, role: decoded.role??'', locked: decoded.locked};
+        const payload = {id: decoded.id, role: decoded.role??'', locked: decoded.locked};
         const newAccessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
 
         const newRefreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
@@ -54,14 +55,7 @@ router.post('/api/refresh', async (req, res) => {
             res.status(403).send('Can not update refresh token');
         }
 
-        res.cookie('refresh', newRefreshToken, {
-            httpOnly: true,
-            maxAge: ms(process.env.EXPIRE_IN_WEEK),
-            sameSite: 'strict',
-            secure: false
-        })
-
-        res.status(200).json({access: newAccessToken});
+        sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
         console.error(err);
         return res.status(403).send('Invalid or expired refresh token');

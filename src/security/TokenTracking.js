@@ -22,6 +22,7 @@ const TokenTracking = async ({userID, userType, token, req, timer}) => {
 }
 
 const TokenUpdate = async ({userID, token, req, timer}) => {
+    console.log('req',req)
     const response = await TokenStore.update({
         refresh: token,
         userAgent: req.get('User-Agent') || 'Unknown',
@@ -31,11 +32,13 @@ const TokenUpdate = async ({userID, token, req, timer}) => {
     }, {
         where: {userID: userID}
     })
+    console.log('response', response)
 
     if (!response) {
         console.error('Error while updating token and data');
         return false
     } else {
+        console.log('Token updated')
         return true
     }
 }
