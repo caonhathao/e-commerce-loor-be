@@ -10,49 +10,41 @@ const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/upload
 const upload = multer();
 
 //get all product's variants by vendor
-router.get('/api/get-all-variants/:id', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'You are not authorized to view this page'});
-    } else {
-        try {
-            const allVariants = await ProductVariants.findAll(
-                {
-                    where: {product_id: req.params.id},
-                    attributes: {exclude: ['product_id', 'createdAt', 'updatedAt']},
-                }
-            );
+router.get('/api/get-all-variants/:id', async (req, res) => {
+    try {
+        const allVariants = await ProductVariants.findAll(
+            {
+                where: {product_id: req.params.id},
+                attributes: {exclude: ['product_id', 'createdAt', 'updatedAt']},
+            }
+        );
 
-            if (!allVariants) {
-                res.status(404).json({message: 'No variant found with this id'});
-            } else res.status(202).json(allVariants);
+        if (!allVariants) {
+            res.status(404).json({message: 'No variant found with this id'});
+        } else res.status(202).json(allVariants);
 
-        } catch
-            (e) {
-            console.error(e);
-            res.status(500).json({message: 'Internal server error'});
-        }
+    } catch
+        (e) {
+        console.error(e);
+        res.status(500).json({message: 'Internal server error'});
     }
 })
 
 //get any variant's information
-router.get('/api/get-variant-by-id/:id', authenticateToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'You are not authorized to view this page'});
-    } else {
-        try {
-            const variant = await ProductVariants.findOne(
-                {
-                    where: {id: req.params.id}
-                }
-            )
+router.get('/api/get-variant-by-id/:id', async (req, res) => {
+    try {
+        const variant = await ProductVariants.findOne(
+            {
+                where: {id: req.params.id}
+            }
+        )
 
-            if (!variant) {
-                res.status(404).json({message: 'No variant found with this id'});
-            } else res.status(200).json(variant);
-        } catch (e) {
-            console.error(e);
-            res.status(500).json({message: 'Internal server error'});
-        }
+        if (!variant) {
+            res.status(404).json({message: 'No variant found with this id'});
+        } else res.status(200).json(variant);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({message: 'Internal server error'});
     }
 })
 

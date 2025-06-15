@@ -11,7 +11,7 @@ const router = _express.Router();
 
 const multer = require('multer');
 const upload = multer();
-const {authenticateToken} = require("../security/JWTAuthentication");
+const {authenticateToken, authenticateAccessToken} = require("../security/JWTAuthentication");
 const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
 const authUtils = require('..//utils/authUtils')
 const {sendAuthResponse} = require("../utils/authUtils");
@@ -19,7 +19,7 @@ const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTr
 
 
 //get user(s)
-router.get('/api/manager/get-all-Users', authenticateToken, async (req, res) => {
+router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(404).json({message: 'Access token is invalid'});
     } else

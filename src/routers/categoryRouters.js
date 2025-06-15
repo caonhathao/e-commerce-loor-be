@@ -10,7 +10,7 @@ const {createID} = require("../utils/global_functions");
 
 //GET DATA
 //get all Category
-router.get('/api/Category', async (req, res) => {
+router.get('/api/category', async (req, res) => {
     try {
         const allCategory = await Category.findAll();
         if (!allCategory) {
@@ -20,32 +20,6 @@ router.get('/api/Category', async (req, res) => {
         console.error(err);
     }
 });
-
-//get all sub-Category from any Category
-router.get('/api/Category/sub-Category/:id', async (req, res) => {
-    try {
-        const result = await Category.findOne({
-            where: {
-                id: req.params.id
-            }
-        });
-        if (!result) {
-            res.status(404).json({message: 'Fetching data failed'});
-        } else {
-            const sub = await SubCategory.findAll({
-                    where: {
-                        category_id: result.id
-                    }
-                }
-            );
-            if (!sub) {
-                res.status(404).json({message: 'Has no sub Category found '});
-            } else res.status(200).json(sub);
-        }
-    } catch (err) {
-        console.error(err);
-    }
-})
 
 //POST
 //create new category
