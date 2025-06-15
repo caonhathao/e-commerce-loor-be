@@ -5,14 +5,16 @@ const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
-const {authenticateAccessToken,authenticateToken} = require("../security/JWTAuthentication");
+const {authenticateAccessToken, authenticateToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
+const chalk = require("chalk");
 const upload = multer();
 
 //get all product from any vendor
 router.get('/api/get-all-products/:id', authenticateAccessToken, async (req, res) => {
+    console.log(req.body);
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});
     } else
@@ -148,7 +150,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
 })
 
 //put: hide/un-hide product
-router.put('/api/vendor/disabled-Products/:status/:id', async (req, res) => {
+router.put('/api/vendor/disabled-products/:status/:id', async (req, res) => {
     try {
         const product = await Products.update(
             {status: req.params.status},
@@ -167,7 +169,8 @@ router.put('/api/vendor/disabled-Products/:status/:id', async (req, res) => {
 })
 
 //put: update product
-router.put('/api/vendor/update-product/:id', authenticateToken, upload.array('images', 10), async (req, res) => {
+router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
+        console.log(chalk.green('Product update info: ' + JSON.stringify(req.body)))
         if (req.user.role !== 'ROLE_VENDOR') {
             res.status(404).json({message: 'Access token is invalid'});
         } else {

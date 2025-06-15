@@ -14,8 +14,23 @@ dotenvExpand.expand(myEnv);
 
 const app = _express();
 app.use(_express.json());
-app.use(cors());
 app.use(cookieParser());
+
+//check allowed origins for cors
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
+
+
 
 // Load routes
 const routersPath = path.join(__dirname, 'routers');

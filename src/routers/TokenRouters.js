@@ -13,12 +13,11 @@ const {verify, sign} = require("jsonwebtoken");
 const {TokenUpdate} = require("../security/TokenTracking");
 const ms = require("ms");
 const {sendAuthResponse} = require("../utils/authUtils");
+const {red} = require("chalk");
 
 const {REFRESH_SECRET_KEY} = process.env;
-router.post('/api/refresh', async (req, res) => {
+router.post('/api/auth/refresh', async (req, res) => {
     const refreshToken = await req.cookies.refresh;
-
-    console.log('refreshToken', req.cookies);
 
     if (!refreshToken) {
         return res.status(401).send('No token provided');
@@ -26,7 +25,6 @@ router.post('/api/refresh', async (req, res) => {
 
     try {
         const decoded = verify(refreshToken, REFRESH_SECRET_KEY);
-        console.log('decoded', decoded);
 
         const checkToken = await TokenStore.findOne({
             where: {
@@ -34,13 +32,11 @@ router.post('/api/refresh', async (req, res) => {
             }
         });
 
-        console.log('checkToken', checkToken);
-
         if (checkToken.refresh !== refreshToken) {
-            return res.status(401).send('Invalid refresh token');
+            return res.status(401).json({message: 'Invalid refresh token'});
         }
 
-        const payload = {id: decoded.id, role: decoded.role??'', locked: decoded.locked};
+        const payload = {id: decoded.id, role: decoded.role ?? '', locked: decoded.locked};
         const newAccessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
 
         const newRefreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
@@ -57,8 +53,8 @@ router.post('/api/refresh', async (req, res) => {
 
         sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
-        console.error(err);
-        return res.status(403).send('Invalid or expired refresh token');
+        red(err);
+        return res.status(403).json({message: 'Invalid or expired refresh token'});
     }
 
 })

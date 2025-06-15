@@ -8,14 +8,16 @@ const router = express.Router();
 
 const multer = require("multer");
 const upload = multer();
-const {authenticateToken} = require("../security/JWTAuthentication");
+const {authenticateToken, authenticateAccessToken} = require("../security/JWTAuthentication");
 const {Sequelize} = require("sequelize");
 const {getIO} = require("../services/websocket");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const {sendAuthResponse} = require("../utils/authUtils");
+const chalk = require("chalk");
 
 //post: sign-in and sign-up
 router.post('/api/brand-login', upload.none(), async (req, res) => {
+    console.log(req.body)
     try {
         const brand = await Brands.findOne({
             where: {
@@ -66,7 +68,7 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
             }
         }
     } catch (err) {
-        console.log(err)
+        console.log(chalk.red(JSON.stringify(err)))
     }
 });
 
@@ -122,6 +124,25 @@ router.post('/api/create-brand', upload.none(), async (req, res) => {
         console.log(err)
     }
 });
+
+router.post('/api/system/authentication/:id', authenticateAccessToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'ROLE_VENDOR') {
+            res.status(404).json({message: 'Access token is invalid'});
+        } else {
+            const record = await Brands.findOne({
+                where: {id: req.params.id}
+            })
+
+            if (!record) {
+                res.status(404).json({message: 'No brand with this id'});
+            }
+            res.status(200).json({message: 'Authentication successful'});
+        }
+    } catch (err) {
+        console.log(chalk.red(JSON.stringify(err)))
+    }
+})
 
 //get: get all info or one
 //get one:
@@ -182,7 +203,7 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
 })
 
 //put: update brand's info
-router.put('/api/brand-update/:id', authenticateToken, upload.none(), async (req, res) => {
+router.put('/api/brand-update/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
