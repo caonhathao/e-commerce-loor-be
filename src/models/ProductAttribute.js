@@ -1,7 +1,7 @@
-const {nanoid} =require('nanoid');
+const {nanoid} = require('nanoid');
 
 module.exports = (sequelize, DataTypes) => {
-    const ProductAttribute = sequelize.define('product_attributes', {
+    const ProductAttribute = sequelize.define('ProductAttributes', {
         id: {
             allowNull: false,
             primaryKey: true,
@@ -16,13 +16,19 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: 'CASCADE',
         },
-        attJson: {
-            type: DataTypes.JSON,
-            allowNull: false,
-        }
-    },{
-        tableName: 'product_attributes',
+        nameAtt: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        valueAtt: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+
+    }, {
+        tableName: 'product_attribute',
         schema: 'store',
+        timestamps: true,
         hooks: {
             beforeCreate: (product_attributes, options) => {
                 product_attributes.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự

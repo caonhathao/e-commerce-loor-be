@@ -150,21 +150,25 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
 })
 
 //put: hide/un-hide product
-router.put('/api/vendor/disabled-products/:status/:id', async (req, res) => {
-    try {
-        const product = await Products.update(
-            {status: req.params.status},
-            {
-                where: {id: req.params.id}
+router.put('/api/vendor/disabled-products/:status/:id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(404).json({message: 'Access token is invalid'});
+    } else {
+        try {
+            const product = await Products.update(
+                {status: req.params.status},
+                {
+                    where: {id: req.params.id}
+                }
+            );
+            if (!product) {
+                res.status(404).json({message: 'No product found with this id'});
+            } else {
+                res.status(200).json('Successfully disabled product');
             }
-        );
-        if (!product) {
-            res.status(404).json({message: 'No product found with this id'});
-        } else {
-            res.status(200).json('Successfully disabled product');
+        } catch (err) {
+            console.error(err);
         }
-    } catch (err) {
-        console.error(err);
     }
 })
 
@@ -282,7 +286,7 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
 )
 
 //delete: delete product permanent
-router.delete('/api/vendor/delete-product/:id', authenticateToken, async (req, res) => {
+router.delete('/api/vendor/delete-product/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else

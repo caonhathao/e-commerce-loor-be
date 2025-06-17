@@ -4,10 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
-const { createServer } = require('node:http');
-const { initWebSocket } = require('./services/websocket');
-const { Sequelize } = require('sequelize');
+const {createServer} = require('node:http');
+const {initWebSocket} = require('./services/websocket');
+const {Sequelize} = require('sequelize');
 const cookieParser = require('cookie-parser');
+const chalk = require('chalk');
 
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
@@ -31,11 +32,10 @@ app.use(cors({
 }));
 
 
-
 // Load routes
 const routersPath = path.join(__dirname, 'routers');
 fs.readdirSync(routersPath).forEach((file) => {
-    if (file.endsWith('.js')) {
+    if (file.endsWith('.routers.js')) {
         const router = require(path.join(routersPath, file));
         app.use(router);
     }
@@ -46,6 +46,7 @@ const server = createServer(app);
 
 // Chạy migration rồi khởi động server
 const runMigrations = require('./migrate');
+const {green} = require("chalk");
 runMigrations()
     .then(() => {
         console.log('✅ Migrations completed');

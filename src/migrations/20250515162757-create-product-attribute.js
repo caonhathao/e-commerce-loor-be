@@ -13,10 +13,20 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            attJson: {
-                type: Sequelize.JSON,
+            nameAtt: {
+                type: Sequelize.STRING,
+                allowNull: false
+            },
+            valueAtt: {
+                type: Sequelize.STRING,
                 allowNull: false,
-            }
+            },
+            createdAt: {
+                type: Sequelize.DATE,
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
+            },
         })
     },
 

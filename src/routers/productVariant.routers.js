@@ -63,6 +63,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
                 stock: req.body.stock,
                 name: req.body.name,
                 status: req.body.status,
+                hasAttribute: false
             });
 
             if (!newVariant) {
