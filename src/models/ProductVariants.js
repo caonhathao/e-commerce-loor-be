@@ -36,7 +36,11 @@ module.exports = (sequelize, DataTypes) => {
         status:{
             type:DataTypes.BOOLEAN,
             allowNull: false,
-        }
+        },
+        hasAttribute: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
     }, {
         tableName: 'product_variants',
         schema: 'store',
