@@ -12,7 +12,7 @@ router.get('/api/get-all-variant-attributes/:id', async (req, res) => {
         const allAttributes = await ProductAttributes.findAll(
             {
                 where: {variant_id: req.params.id},
-                attributes: {exclude: ['id','variant_id', 'createdAt', 'updatedAt']},
+                attributes: {exclude: ['id', 'variant_id', 'createdAt', 'updatedAt']},
             }
         );
         if (!allAttributes) {
@@ -31,18 +31,28 @@ router.post('/api/create-new-variant-attribute/:id', authenticateAccessToken, as
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(403).json({message: 'You are not allowed to access this action'});
     } else {
-        for (const [key, value] of Object.entries(req.body)) {
-            const newProductAttribute = await ProductAttributes.create({
-                id: generateID('ATTR'),
-                variant_id: req.params.id,
-                nameAtt: key,
-                valueAtt: value,
+        try {
+            const deleteAtt = await ProductAttributes.destroy({
+                where: {
+                    variant_id: req.params.id
+                }
             });
-            if (!newProductAttribute) {
-                return res.status(400).json({message: 'Created failed'});
+            for (const [key, value] of Object.entries(req.body)) {
+                const newProductAttribute = await ProductAttributes.create({
+                    id: generateID('ATTR'),
+                    variant_id: req.params.id,
+                    nameAtt: key,
+                    valueAtt: value,
+                });
+                if (!newProductAttribute) {
+                    return res.status(400).json({message: 'Created failed'});
+                }
             }
+
+            res.status(200).json({message: 'Created successfully'});
+        } catch (e) {
+            console.error(chalk.red(e));
         }
-        res.status(200).json({message: 'Created successfully'});
     }
 })
 module.exports = router;
