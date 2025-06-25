@@ -3,11 +3,12 @@ const router = _express.Router();
 const {SubCategory} = require('../models/_index');
 const {createID} = require('../utils/global_functions');
 const multer = require('multer');
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const upload = multer();
 
 //Post
 //Create new sub category
-router.post('/api/manager/create-sub-category', upload.none(), async (req, res) => {
+router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.none(), async (req, res) => {
     try {
         const id = createID('SUB-CAT');
         const sub = await SubCategory.create({
@@ -26,7 +27,7 @@ router.post('/api/manager/create-sub-category', upload.none(), async (req, res) 
 })
 
 //Update sub category
-router.put('/api/manager/update-sub-category/:id', upload.none(), async (req, res) => {
+router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     try {
         const result = await SubCategory.update(
             {
@@ -49,7 +50,7 @@ router.put('/api/manager/update-sub-category/:id', upload.none(), async (req, re
 
 //Get
 //Get all sub categories from any parent-category with category_id:
-router.get('/api/manager/get-all-sub-from-category/:id', async (req, res) => {
+router.get('/api/public/get-all-sub-from-category/:id', async (req, res) => {
     try {
         const result = await SubCategory.findAll({
             where: {
@@ -65,7 +66,7 @@ router.get('/api/manager/get-all-sub-from-category/:id', async (req, res) => {
 })
 
 //Get any sub category's info
-router.get('/api/manager/get-sub-category/:id', async (req, res) => {
+router.get('/api/public/get-sub-category/:id', async (req, res) => {
     try {
         const result = await SubCategory.findOne({
             where: {
@@ -82,7 +83,7 @@ router.get('/api/manager/get-sub-category/:id', async (req, res) => {
 
 //delete:
 //delete any sub category by id
-router.delete('/api/manager/delete-sub-category/:id', async (req, res) => {
+router.delete('/api/manager/delete-sub-category/:id', authenticateAccessToken, async (req, res) => {
     try {
         const result = await SubCategory.destroy({
             where: {

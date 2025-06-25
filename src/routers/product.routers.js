@@ -1,19 +1,38 @@
 // theses are all api for product
-const {Products, Brands, ImageProduct} = require('../models/_index');
+const {Products, Brands, ImageProduct,ProductVariants} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
-const {authenticateAccessToken, authenticateToken} = require("../security/JWTAuthentication");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const chalk = require("chalk");
 const upload = multer();
 
-//get all product from any vendor
-router.get('/api/get-all-products/:id', authenticateAccessToken, async (req, res) => {
+
+//get all products
+router.get('/api/public/get-all-products', async (req, res) => {
+    try {
+        const allProd = await Products.findAll({
+            attributes:{exclude:['createdAt','description','otherVariant','pro_tsv','stock','tags','updatedAt']},
+            include: [{
+                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id','id','image_id']},
+            }],
+        });
+        if (!allProd) {
+            res.status(404).json({message: 'No product found'});
+        } else res.status(200).json(allProd);
+    } catch (e) {
+        console.log(chalk.red(e))
+        res.status(500).json({message: 'Internal server error'});
+    }
+})
+
+//to get all products from any vendor
+router.get('/api/vendor/get-all-products/:id', authenticateAccessToken, async (req, res) => {
     console.log(req.body);
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'You are not authorized to view this page'});
@@ -43,7 +62,7 @@ router.get('/api/get-all-products/:id', authenticateAccessToken, async (req, res
 });
 
 //get info from any product
-router.get('/api/get-product-by-id/:id', async (req, res) => {
+router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     try {
         const product = await Products.findOne({
             where: {id: req.params.id},
@@ -82,7 +101,7 @@ router.get('/api/get-product-by-price/:p1/:p2', async (req, res) => {
 });
 
 //get Products by keyword
-router.get('/api/get-product-by-key/:k', async (req, res) => {
+router.get('/api/public/get-product-by-key/:k', async (req, res) => {
     try {
         const key = req.params.k.toLowerCase();
         const results = await Products.findAll({

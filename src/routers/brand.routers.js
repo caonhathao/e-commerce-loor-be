@@ -16,7 +16,7 @@ const {sendAuthResponse} = require("../utils/authUtils");
 const chalk = require("chalk");
 
 //post: sign-in and sign-up
-router.post('/api/brand-login', upload.none(), async (req, res) => {
+router.post('/api/public/brand-login', upload.none(), async (req, res) => {
     console.log(req.body)
     try {
         const brand = await Brands.findOne({
@@ -73,7 +73,7 @@ router.post('/api/brand-login', upload.none(), async (req, res) => {
 });
 
 //send otp code to authentication email and number phone (in handle)
-router.post('/api/create-brand', upload.none(), async (req, res) => {
+router.post('/api/public/create-brand', upload.none(), async (req, res) => {
     try {
         let newBrand = {};
         try {
@@ -146,7 +146,7 @@ router.post('/api/system/authentication/:id', authenticateAccessToken, async (re
 
 //get: get all info or one
 //get one:
-router.get('/api/get-brand-by-id/:id', authenticateToken, async (req, res) => {
+router.get('/api/public/get-brand-by-id/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER' && req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
@@ -203,7 +203,7 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
 })
 
 //put: update brand's info
-router.put('/api/brand-update/:id', authenticateAccessToken, upload.none(), async (req, res) => {
+router.put('/api/vendor/brand-update/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else

@@ -43,6 +43,10 @@ module.exports = (sequelize, DataTypes) => {
                     type: DataTypes.TEXT,
                     allowNull: false,
                 },
+                averagePrice: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
                 status: {
                     type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
                     allowNull: true,
@@ -52,15 +56,13 @@ module.exports = (sequelize, DataTypes) => {
                     type: DataTypes.INTEGER,
                     allowNull: false,
                 },
-                otherVariant:
-                    {
-                        type: DataTypes.BOOLEAN,
-                        allowNull:
-                            false,
-                        defaultValue:
-                            false,
-                    }
-                ,
+                otherVariant: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull:
+                        false,
+                    defaultValue:
+                        false,
+                },
                 promotion: {
                     type: DataTypes.INTEGER,
                     allowNull:
