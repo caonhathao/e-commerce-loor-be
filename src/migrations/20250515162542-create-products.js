@@ -34,15 +34,19 @@ module.exports = {
                 type: Sequelize.TEXT,
                 allowNull: false,
             },
+            averagePrice: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             status: {
                 type: Sequelize.ENUM('1', '0'), //1 is showing, 0 is disabled
                 allowNull: true,
                 defaultValue: '1',
             },
-            stock:{
-              type: Sequelize.INTEGER,
-              allowNull: false,
-              defaultValue: 0,
+            stock: {
+                type: Sequelize.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
             },
             otherVariant: {
                 type: Sequelize.BOOLEAN,

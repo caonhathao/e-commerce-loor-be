@@ -10,7 +10,7 @@ const {createID} = require("../utils/global_functions");
 
 //GET DATA
 //get all Category
-router.get('/api/category', async (req, res) => {
+router.get('/api/public/get-all-category', async (req, res) => {
     try {
         const allCategory = await Category.findAll();
         if (!allCategory) {

@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {Users, UserRoles, TokenStore} = require('../models/_index');
+const {Users, UserRoles, TokenStore,Banned} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
@@ -35,7 +35,7 @@ router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, re
 });
 
 //get full info from any account
-router.get('/api/get-user-by-id/:id', authenticateToken, async (req, res) => {
+router.get('/api/user/get-user-by-id/:id', authenticateAccessToken, async (req, res) => {
     try {
         const user = await Users.findOne({
             where: {
@@ -54,7 +54,7 @@ router.get('/api/get-user-by-id/:id', authenticateToken, async (req, res) => {
 })
 
 //post: sign-in and sign-up
-router.post('/api/create-user', upload.none(), async (req, res) => {
+router.post('/api/public/create-user', upload.none(), async (req, res) => {
         try {
             let newUser = {};
             try {
@@ -123,7 +123,7 @@ router.post('/api/create-user', upload.none(), async (req, res) => {
 ;
 
 //post: user log in
-router.post('/api/user-login', upload.none(), async (req, res) => {
+router.post('/api/public/user-login', upload.none(), async (req, res) => {
     try {
         const user = await Users.findOne({
             where: {
@@ -201,7 +201,7 @@ router.put('/api/system/lock-user-by-id/:id', async (req, res) => {
     }
 })
 
-router.put('/api/manager/lock-user-by-id/:id', authenticateToken, async (req, res) => {
+router.put('/api/manager/lock-user-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(401).json({message: 'Access token is invalid'});
     } else
@@ -214,7 +214,7 @@ router.put('/api/manager/lock-user-by-id/:id', authenticateToken, async (req, re
 })
 
 //restore account
-router.put('/api/manager/restore-user-by-id/:id', authenticateToken, async (req, res) => {
+router.put('/api/manager/restore-user-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
@@ -224,7 +224,7 @@ router.put('/api/manager/restore-user-by-id/:id', authenticateToken, async (req,
             if (!user) {
                 res.status(404).json({message: 'No user with this id'});
             } else {
-                const ban = await banned.findOne({
+                const ban = await Banned.findOne({
                     where: {user_id: req.params.id}
                 })
 
@@ -241,7 +241,7 @@ router.put('/api/manager/restore-user-by-id/:id', authenticateToken, async (req,
 })
 
 //put:update info
-router.put('/api/update-user-info/:id', authenticateToken, upload.none(), async (req, res) => {
+router.put('/api/user/update-user-info/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     try {
         console.log(req.body);
         const updateFields = {};
@@ -282,7 +282,7 @@ router.put('/api/update-user-info/:id', authenticateToken, upload.none(), async 
 })
 
 //put: change password
-router.put('/api/change-password/:id', authenticateToken, upload.none(), async (req, res) => {
+router.put('/api/user/change-password/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     try {
         const user = await Users.findOne({
             where: {
@@ -309,12 +309,12 @@ router.put('/api/change-password/:id', authenticateToken, upload.none(), async (
             res.status(404).json({message: 'Changing failed! Please check your password'});
     } catch
         (err) {
-        console.log(err);
+        console.log(chalk.red(err));
     }
 })
 
 //delete: delete account permanent
-router.delete('/api/delete-account/:id', authenticateToken, async (req, res) => {
+router.delete('/api/user/delete-account/:id', authenticateAccessToken, async (req, res) => {
     try {
         const result = await Users.destroy({
             where: {id: req.params.id}

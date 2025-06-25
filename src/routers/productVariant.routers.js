@@ -10,7 +10,7 @@ const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/upload
 const upload = multer();
 
 //get all product's variants by vendor
-router.get('/api/get-all-variants/:id', async (req, res) => {
+router.get('/api/public/get-all-variants/:id', async (req, res) => {
     try {
         const allVariants = await ProductVariants.findAll(
             {
@@ -31,7 +31,7 @@ router.get('/api/get-all-variants/:id', async (req, res) => {
 })
 
 //get any variant's information
-router.get('/api/get-variant-by-id/:id', async (req, res) => {
+router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
     try {
         const variant = await ProductVariants.findOne(
             {

@@ -7,9 +7,10 @@
 const {banned} = require('../models/_index');
 const _express = require('express');
 const router = _express.Router();
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 
 //get all banned
-router.get('/api/get-all-banned', async (req, res) => {
+router.get('/api/user/get-all-banned',authenticateAccessToken, async (req, res) => {
     try {
         const allBanned = await banned.findAll();
         if (!allBanned) {
@@ -22,7 +23,7 @@ router.get('/api/get-all-banned', async (req, res) => {
 })
 
 //get all banned of any user/brand by user/brand's id
-router.get('/api/get-all-banned-by-id/:id', async (req, res) => {
+router.get('/api/user/get-all-banned-by-id/:id',authenticateAccessToken, async (req, res) => {
     try {
         const allBanned = await banned.findAll(
             {
@@ -39,7 +40,7 @@ router.get('/api/get-all-banned-by-id/:id', async (req, res) => {
 })
 
 //delete all banned of any user/brand by user/brand's id
-router.post('/api/delete-all-banned-by-id/:id', async (req, res) => {
+router.post('/api/manager/delete-all-banned-by-id/:id', async (req, res) => {
     try {
         const deleted = await banned.destroy({where: {banned_id: req.params.id}});
 
@@ -54,7 +55,7 @@ router.post('/api/delete-all-banned-by-id/:id', async (req, res) => {
 
 //create new banned by user/brand's id
 const moment = require('moment')
-router.post('/api/create-user-banned/:id', async (req, res) => {
+router.post('/api/manager/create-user-banned/:id', async (req, res) => {
     try {
         const newBanned = await banned.create({
             user_id: req.params.id,

@@ -27,7 +27,7 @@ router.get('/api/get-all-variant-attributes/:id', async (req, res) => {
 
 
 //create new attributes for variant
-router.post('/api/create-new-variant-attribute/:id', authenticateAccessToken, async (req, res) => {
+router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(403).json({message: 'You are not allowed to access this action'});
     } else {
