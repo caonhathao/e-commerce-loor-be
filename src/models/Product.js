@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
                     type: DataTypes.TEXT,
                     allowNull: false,
                 },
-                averagePrice: {
+                average_price: {
                     type: DataTypes.STRING,
                     allowNull: false,
                 },
@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
                     type: DataTypes.INTEGER,
                     allowNull: false,
                 },
-                otherVariant: {
+                other_variant: {
                     type: DataTypes.BOOLEAN,
                     allowNull:
                         false,
@@ -69,33 +69,27 @@ module.exports = (sequelize, DataTypes) => {
                         true,
                     defaultValue:
                         0,
-                }
-                ,
+                },
                 tags: {
                     type: DataTypes.ARRAY(DataTypes.STRING),
                     allowNull:
                         true
-                }
-                ,
+                },
                 pro_tsv: {
                     type: DataTypes.TSVECTOR,
                     allowNull:
                         true,
-                }
-                ,
+                },
             },
             {
                 tableName: 'products',
-                schema:
-                    'store',
-                timestamps:
-                    true,
-                hooks:
-                    {
-                        beforeCreate: (product, options) => {
-                            product.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-                        }
+                schema: 'store',
+                timestamps: true,
+                hooks: {
+                    beforeCreate: (product, options) => {
+                        product.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
                     }
+                }
             }
         )
     ;

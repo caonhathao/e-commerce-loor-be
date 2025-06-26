@@ -16,11 +16,11 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: 'CASCADE',
         },
-        nameAtt: {
+        name_att: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        valueAtt: {
+        value_att: {
             type: DataTypes.STRING,
             allowNull: false
         },

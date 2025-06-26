@@ -19,7 +19,9 @@ module.exports = {
             },
             createdAt: {
                 type: Sequelize.DATE,
-                allowNull: false,
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
             },
             type: {
                 type: Sequelize.ENUM('SUCCESS', 'WARNING', 'ERROR', 'Notification'),

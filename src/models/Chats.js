@@ -21,13 +21,10 @@ module.exports=(sequelize,DataTypes) => {
         content:{
             type:DataTypes.STRING,
             allowNull:false,
-        },
-        createdAt: {
-            type: DataTypes.TIME,
-            allowNull:false,
         }
     },{
         tableName: 'chats',
+        timestamps: false,
         schema: 'store',
     });
     ChatSupport.associate = function(models) {

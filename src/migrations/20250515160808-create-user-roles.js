@@ -23,7 +23,13 @@ module.exports = {
         type: Sequelize.ENUM('ROLE_USER', 'ROLE_BRAND', 'ROLE_MANAGER'),
         allowNull: false,
         defaultValue: 'ROLE_USER',
-      }
+      },
+      createdAt: {
+        type: Sequelize.DATE,
+      },
+      updatedAt: {
+        type: Sequelize.DATE,
+      },
     })
   },
 

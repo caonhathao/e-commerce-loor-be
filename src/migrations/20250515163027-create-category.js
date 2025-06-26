@@ -18,7 +18,7 @@ module.exports = {
                 allowNull: false,
                 defaultValue: 'none',
             },
-            imageLink:{
+            image_link:{
                 type: Sequelize.STRING,
                 allowNull: true,
             },

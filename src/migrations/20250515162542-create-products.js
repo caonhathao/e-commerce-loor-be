@@ -34,7 +34,7 @@ module.exports = {
                 type: Sequelize.TEXT,
                 allowNull: false,
             },
-            averagePrice: {
+            average_price: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
@@ -48,7 +48,7 @@ module.exports = {
                 allowNull: false,
                 defaultValue: 0,
             },
-            otherVariant: {
+            other_variant: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,
                 defaultValue: false,
