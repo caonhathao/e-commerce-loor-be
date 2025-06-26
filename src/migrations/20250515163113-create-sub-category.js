@@ -4,29 +4,33 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable({schema: 'store', tableName: 'sub_category'}, {
-          id: {
-            type: Sequelize.STRING,
-            primaryKey: true,
-            allowNull: false,
-          },
-          category_id: {
-            type: Sequelize.STRING,
-            allowNull: false,
-            references: {
-              model: 'category',
-              key: 'id',
+            id: {
+                type: Sequelize.STRING,
+                primaryKey: true,
+                allowNull: false,
             },
-            onDelete: 'CASCADE',
-          },
-          name: {
-            type: Sequelize.STRING,
-            allowNull: false,
-          },
-          description: {
-            type:Sequelize.STRING,
-            allowNull: false,
-            defaultValue: 'none',
-          }
+            category_id: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                references: {
+                    model: 'category',
+                    key: 'id',
+                },
+                onDelete: 'CASCADE',
+            },
+            name: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            description: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                defaultValue: 'none',
+            },
+            imageLink: {
+                type: Sequelize.STRING,
+                allowNull: true,
+            }
         })
     },
 

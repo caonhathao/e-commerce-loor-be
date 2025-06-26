@@ -1,13 +1,16 @@
 //these API is for category management, use them by manager role
 const _express = require('express');
 const router = _express.Router();
+const statusCode = require('../utils/statuRes');
 
 const multer = require('multer');
 const upload = multer();
 
-const {Category, SubCategory} = require('../models/_index');
-const {createID} = require("../utils/global_functions");
-
+const {Category, SubCategory, ImageProduct} = require('../models/_index');
+const {createID, getPublicIdFromURL} = require("../utils/global_functions");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
+const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
+const chalk = require('chalk');
 //GET DATA
 //get all Category
 router.get('/api/public/get-all-category', async (req, res) => {
@@ -17,79 +20,137 @@ router.get('/api/public/get-all-category', async (req, res) => {
             res.status(404).json({message: 'Fetching data failed'});
         } else res.status(200).json(allCategory);
     } catch (err) {
-        console.error(err);
+        console.log(chalk.red('Error while handle: ', err))
+        res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 });
 
 //POST
 //create new category
-router.post('/api/manager/create-category', upload.none(), async (req, res) => {
-    try {
-        const idCategory = createID('CAT');
-        const newCategory = await Category.create({
-            id: idCategory,
-            name: req.body.name,
-            description: req.body.description,
-        })
-        if (!newCategory) {
-            res.status(404).json({message: 'Create category failed'});
+router.post('/api/manager/create-category', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else
+        try {
+            if (!req.files || req.files.length === 0) {
+                res.status(statusCode.missingModule).json({message: 'Please upload images'});
+            } else {
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_C);
+                if (!imageUrl) {
+                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                } else {
+                    const idCategory = createID('CAT');
+                    const newCategory = await Category.create({
+                        id: idCategory,
+                        name: req.body.name,
+                        description: req.body.description,
+                        imageLink: imageUrl.toString()
+                    })
+                    if (!newCategory) {
+                        res.status(statusCode.errorHandle).json({message: 'Create category failed'});
+                    }
+                    res.status(statusCode.success).json('Created successfully');
+                }
+            }
+        } catch (err) {
+            console.log(chalk.red('Error while handle: ', err))
+            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
-        res.status(200).json('Created successfully');
-    } catch (err) {
-        console.error(err);
-    }
 })
 
 //update category
-router.put('/api/manager/update-category/:id', upload.none(), async (req, res) => {
-    console.log(JSON.stringify(req.body));
-    try {
-        const item = await Category.findOne({
-            where: {
-                id: req.params.id
-            }
-        })
-        if (!item) {
-            res.status(404).json({message: 'Category not found'});
-        }
-
-        const updateFields = {};
-
-        if (req.body.name && req.body.name !== '') {
-            updateFields['name'] = req.body.name;
-        }
-        if (req.body.description && req.body.description !== '') {
-            updateFields['description'] = req.body.description;
-        }
-
-        if (Object.keys(updateFields).length > 0) {
-
-            const [effectRows] = await Category.update(updateFields, {
-                where: {id: req.params.id}
+router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else
+        try {
+            const item = await Category.findOne({
+                where: {
+                    id: req.params.id
+                }
             })
+            if (!item) {
+                res.status(statusCode.errorHandle).json({message: 'Category not found'});
+            }
 
-            if (effectRows === 0) {
-                res.status(500).json({message: 'Updating data failed'});
-            } else
-                res.status(200).json('Updated successfully');
+            const updateFields = {};
+
+            if (req.body.name && req.body.name !== '') {
+                updateFields['name'] = req.body.name;
+            }
+            if (req.body.description && req.body.description !== '') {
+                updateFields['description'] = req.body.description;
+            }
+
+            if (Object.keys(updateFields).length > 0) {
+
+                const [effectRows] = await Category.update(updateFields, {
+                    where: {id: req.params.id}
+                })
+
+                if (effectRows === 0) {
+                    res.status(statusCode.errorHandle).json({message: 'Updating data failed'});
+                }
+            }
+            if (req.files && req.files.length > 0) {
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_C);
+
+                if (!imageUrl) {
+                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                }
+
+                const response = await Category.update(
+                    {imageLink: imageUrl.toString()}, {
+                        where: {id: req.params.id}
+                    })
+                if (!response) {
+                    res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
+                }
+                res.status(statusCode.success).json('Updated successfully');
+            }
+            res.status(statusCode.success).json('Updated successfully');
+        } catch (err) {
+            console.log(chalk.red('Error while handle: ', err))
+            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
-    } catch (err) {
-
-    }
 });
 
 //DELETE
-router.delete('/api/manager/delete-category/:id', async (req, res) => {
-    try {
-        const category = await Category.destroy({
-            where: {id: req.params.id}
-        });
-        if (!category) {
-            res.status(404).json({message: 'Deleting failed'});
-        } else res.status(200).json('Deleted successfully');
-    } catch (err) {
-        console.log(err)
-    }
+router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_MANAGER') {
+        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else
+        try {
+            const obj = await Category.findOne({
+                where: {
+                    id: req.params.id
+                }
+            })
+
+            if (!obj) {
+                res.status(statusCode.errorHandle).json({message: 'Category not found'});
+            }
+
+            const imageUrl = obj.imageLink;
+            const removeImage = await destroyToCloudinary(getPublicIdFromURL(imageUrl, process.env.CLOUD_ASSET_F_C));
+            if (removeImage.result !== 'ok') {
+                res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
+            } else {
+                const result = await Category.destroy({
+                    where: {
+                        id: req.params.id
+                    }
+                })
+                if (!result) {
+                    res.status(statusCode.errorHandle).json({message: 'Deleting failed!'});
+                }
+                res.status(statusCode.success).json('Deleted successfully');
+            }
+
+        } catch (err) {
+            console.log(chalk.red('Error while handle: ', err))
+            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
 })
 
 

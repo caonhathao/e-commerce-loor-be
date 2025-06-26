@@ -19,14 +19,18 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         description: {
-            type:DataTypes.STRING,
+            type: DataTypes.STRING,
             allowNull: false,
             defaultValue: 'none',
+        },
+        imageLink: {
+            type: DataTypes.STRING,
+            allowNull: true,
         }
     }, {
         tableName: 'sub_category',
-        schema:'store',
-        timestamps:false,
+        schema: 'store',
+        timestamps: false,
     });
 
     SubCategory.associate = (models) => {
@@ -36,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         SubCategory.hasMany(models.Products, {
             foreignKey: 'subcategory_id',
-            as:'products',
+            as: 'products',
         })
     };
     return SubCategory;

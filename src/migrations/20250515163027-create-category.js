@@ -17,7 +17,11 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
                 defaultValue: 'none',
-            }
+            },
+            imageLink:{
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
         })
     },
 

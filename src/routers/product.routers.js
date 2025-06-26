@@ -193,7 +193,7 @@ router.put('/api/vendor/disabled-products/:status/:id', authenticateAccessToken,
 
 //put: update product
 router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
-        console.log(chalk.green('Product update info: ' + JSON.stringify(req.body)))
+        //console.log(chalk.green('Product update info: ' + JSON.stringify(req.body)))
         if (req.user.role !== 'ROLE_VENDOR') {
             res.status(404).json({message: 'Access token is invalid'});
         } else {
