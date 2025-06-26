@@ -13,6 +13,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: 'none',
+        },
+        imageLink: {
+            type: DataTypes.STRING,
+            allowNull: true,
         }
     }, {
         tableName: 'category',
