@@ -1,5 +1,5 @@
 // theses are all api for product
-const {Products, Brands, ImageProduct,ProductVariants} = require('../models/_index');
+const {Products, Brands, ImageProduct, ProductVariants} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
@@ -17,9 +17,9 @@ const upload = multer();
 router.get('/api/public/get-all-products', async (req, res) => {
     try {
         const allProd = await Products.findAll({
-            attributes:{exclude:['createdAt','description','otherVariant','pro_tsv','stock','tags','updatedAt']},
+            attributes: {exclude: ['createdAt', 'description', 'otherVariant', 'pro_tsv', 'stock', 'tags', 'updatedAt']},
             include: [{
-                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id','id','image_id']},
+                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id', 'id', 'image_id']},
             }],
         });
         if (!allProd) {
@@ -228,6 +228,9 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                 if (req.body.description && req.body.description !== '') {
                     updateFields.description = req.body.description;
                 }
+                if (req.body.averagePrice && req.body.averagePrice !== '') {
+                    updateFields.averagePrice = req.body.averagePrice;
+                }
                 if (req.body.promotion && req.body.promotion !== '') {
                     updateFields.promotion = req.body.promotion;
                 }
@@ -254,8 +257,8 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                         if (req.body.deletedImages && req.body.deletedImages.length > 0) {
                             for (const image of JSON.parse(req.body["deletedImages"])) {
                                 //if destroy successfully
-                                const res = await destroyToCloudinary(image.image_id);
-                                console.error(res)
+                                const res = await destroyToCloudinary(image);
+                                console.error('error: ', res)
                                 //when destroyed, cloudinary will send  a json with content: {'result':'ok}
                                 if (res.result === 'ok') {
                                     console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);

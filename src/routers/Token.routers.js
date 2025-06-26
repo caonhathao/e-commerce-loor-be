@@ -1,17 +1,12 @@
-const {createID, encryptPW} = require('../utils/global_functions');
-
 const {TokenStore} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
 
-const multer = require('multer');
-const upload = multer();
-const {authenticateToken} = require("../security/JWTAuthentication");
 const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
 const {verify, sign} = require("jsonwebtoken");
 const {TokenUpdate} = require("../security/TokenTracking");
-const ms = require("ms");
+require("ms");
 const {sendAuthResponse} = require("../utils/authUtils");
 const {red} = require("chalk");
 

@@ -29,10 +29,10 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
             res.status(404).json({message: 'Sign in failed! Please check your email'});
         } else {
             if (brand.password !== encryptPW(req.body.password)) {
-                res.status(401).json({message: 'Sign in failed! Invalid password'});
+                res.status(404).json({message: 'Sign in failed! Invalid password'});
             } else {
-                const payload = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked};
-                const brandData = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked};
+                const payload = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked, name: brand.name};
+                const brandData = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked, name: brand.name};
 
                 let refreshToken;
                 let accessToken;
@@ -47,7 +47,7 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
                         timer: process.env.EXPIRE_IN_WEEK,
                     });
                     if (!response) {
-                        res.status(404).json({message: 'Sign in failed! Can not generate token'});
+                        res.status(401).json({message: 'Sign in failed! Can not generate token'});
                     } else {
                         accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
                         sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)

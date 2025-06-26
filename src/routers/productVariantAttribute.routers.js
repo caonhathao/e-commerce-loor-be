@@ -7,7 +7,7 @@ const {generateID} = require("../utils/global_functions");
 const router = _express.Router();
 
 //get all variant's attributes from any variant
-router.get('/api/get-all-variant-attributes/:id', async (req, res) => {
+router.get('/api/public/get-all-variant-attributes/:id', async (req, res) => {
     try {
         const allAttributes = await ProductAttributes.findAll(
             {
