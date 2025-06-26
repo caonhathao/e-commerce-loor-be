@@ -13,11 +13,11 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            nameAtt: {
+            name_att: {
                 type: Sequelize.STRING,
                 allowNull: false
             },
-            valueAtt: {
+            value_att: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },

@@ -23,14 +23,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED'),
             allowNull: false,
         },
-        createat:{
-            type: DataTypes.DATE,
-            allowNull: false,
-            default:DataTypes.NOW
-        }
     },{
         tableName: 'orders',
-        timestamps:false
+        timestamps: false,
+        schema: 'store',
     });
 
     Orders.associate = (models) => {

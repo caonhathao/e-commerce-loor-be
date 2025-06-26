@@ -1,7 +1,7 @@
 //these API is for category management, use them by manager role
 const _express = require('express');
 const router = _express.Router();
-const statusCode = require('../utils/statuRes');
+const statusCode = require('../utils/statusCode');
 
 const multer = require('multer');
 const upload = multer();
@@ -11,6 +11,7 @@ const {createID, getPublicIdFromURL} = require("../utils/global_functions");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const chalk = require('chalk');
+
 //GET DATA
 //get all Category
 router.get('/api/public/get-all-category', async (req, res) => {
@@ -44,7 +45,7 @@ router.post('/api/manager/create-category', authenticateAccessToken, upload.arra
                         id: idCategory,
                         name: req.body.name,
                         description: req.body.description,
-                        imageLink: imageUrl.toString()
+                        image_link: imageUrl.toString()
                     })
                     if (!newCategory) {
                         res.status(statusCode.errorHandle).json({message: 'Create category failed'});
@@ -100,7 +101,7 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
                 }
 
                 const response = await Category.update(
-                    {imageLink: imageUrl.toString()}, {
+                    {image_link: imageUrl.toString()}, {
                         where: {id: req.params.id}
                     })
                 if (!response) {
@@ -146,7 +147,6 @@ router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async
                 }
                 res.status(statusCode.success).json('Deleted successfully');
             }
-
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
             res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

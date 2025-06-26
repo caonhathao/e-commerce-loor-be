@@ -29,13 +29,15 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            timeCreated: {
-                type: Sequelize.DATE,
-                allowNull: false,
-            },
             rating: {
                 type: Sequelize.ENUM('1', '2', '3', '4', '5'),
                 allowNull: false,
+            },
+            createdAt: {
+                type: Sequelize.DATE,
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
             },
         })
     },

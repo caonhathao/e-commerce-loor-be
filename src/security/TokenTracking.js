@@ -1,20 +1,20 @@
 const {TokenStore} = require('../models/_index')
 const {createID} = require('../utils/global_functions')
 const ms = require("ms");
-const {red, green} = require("chalk");
+const chalk = require("chalk");
 const TokenTracking = async ({userID, userType, token, req, timer}) => {
     const response = await TokenStore.create({
         id: createID('TOKEN'),
-        userID: userID,
-        userType: userType,
+        user_id: userID,
+        user_type: userType,
         refresh: token,
-        userAgent: req.get('User-Agent') || 'Unknown',
+        user_agent: req.get('User-Agent') || 'Unknown',
         IP: req.ip || req.connection.remoteAddress,
         expiredAt: new Date(Date.now() + ms(timer)),
         createdAt: new Date(),
         updatedAt: new Date(),
     })
-
+    console.log('check token: ', response)
     if (!response) {
         console.error('Error while saving token and data');
         return false
@@ -24,26 +24,26 @@ const TokenTracking = async ({userID, userType, token, req, timer}) => {
 const TokenUpdate = async ({userID, token, req, timer}) => {
     const response = await TokenStore.update({
         refresh: token,
-        userAgent: req.get('User-Agent') || 'Unknown',
+        user_agent: req.get('User-Agent') || 'Unknown',
         IP: req.ip || req.connection.remoteAddress,
         expiredAt: new Date(Date.now() + ms(timer)),
         updatedAt: new Date(),
     }, {
-        where: {userID: userID}
+        where: {user_id: userID}
     })
 
     if (!response) {
-        red('Error while updating token and data');
+        console.log(chalk.green('Error while updating token and data'))
         return false
     } else {
-        green('Token updated')
+        console.log(chalk.green('Token updated'))
         return true
     }
 }
 
 const ValidateToken = async ({userId}) => {
     const response = await TokenStore.findOne({
-        where: {userID: userId}
+        where: {user_id: userId}
     })
 
     if (!response) {

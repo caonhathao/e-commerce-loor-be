@@ -34,7 +34,7 @@ module.exports = {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,
             },
-            hasAttribute:{
+            has_attribute:{
                 type: Sequelize.BOOLEAN,
                 allowNull: false,
                 defaultValue: true,

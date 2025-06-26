@@ -7,18 +7,18 @@ module.exports = {
             id: {
                 type: Sequelize.STRING, primaryKey: true, allowNull: false
             },
-            userID: {
+            user_id: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            userType: {
+            user_type: {
                 type: Sequelize.ENUM('user', 'brand'),
                 allowNull: false,
             },
             refresh: {
                 type: Sequelize.STRING, allowNull: false
             },
-            userAgent: {
+            user_agent: {
                 type: Sequelize.STRING, allowNull: false, defaultValue: 'Unknown'
             },
             IP: {

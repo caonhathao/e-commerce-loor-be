@@ -30,7 +30,13 @@ module.exports = {
                 type: Sequelize.ENUM('COD', 'OP'),
                 allowNull: false,
                 defaultValue: 'COD',
-            }
+            },
+            createdAt: {
+                type: Sequelize.DATE,
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
+            },
         })
     },
 

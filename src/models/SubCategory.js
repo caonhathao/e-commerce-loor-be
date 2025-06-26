@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             defaultValue: 'none',
         },
-        imageLink: {
+        image_link: {
             type: DataTypes.STRING,
             allowNull: true,
         }

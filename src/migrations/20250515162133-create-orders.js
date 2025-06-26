@@ -27,11 +27,12 @@ module.exports = {
                 type: Sequelize.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED'),
                 allowNull: false,
             },
-            createat: {
+            createdAt: {
                 type: Sequelize.DATE,
-                allowNull: false,
-                default: Sequelize.NOW
-            }
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
+            },
         })
     },
 

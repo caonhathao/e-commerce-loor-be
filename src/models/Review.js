@@ -34,9 +34,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('1', '2', '3', '4', '5'),
             allowNull: false,
         },
+
     }, {
         tableName: 'reviews',
         schema: 'store',
+        timestamps: true,
         hooks: {
             beforeCreate: (reviews, options) => {
                 reviews.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự

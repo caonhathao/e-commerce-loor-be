@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {Users, UserRoles, TokenStore,Banned} = require('../models/_index');
+const {Users, UserRoles, TokenStore, Banned} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
@@ -16,7 +16,8 @@ const {generateAccessToken, generateRefreshToken} = require('../security/JWTProv
 const authUtils = require('..//utils/authUtils')
 const {sendAuthResponse} = require("../utils/authUtils");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
-
+const chalk = require("chalk");
+const statusCode = require('../utils/statusCode');
 
 //get user(s)
 router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, res) => {
@@ -53,7 +54,7 @@ router.get('/api/user/get-user-by-id/:id', authenticateAccessToken, async (req, 
     }
 })
 
-//post: sign-in and sign-up
+//post: user register
 router.post('/api/public/create-user', upload.none(), async (req, res) => {
         try {
             let newUser = {};
@@ -69,7 +70,7 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
                 if (err.name === 'SequelizeUniqueConstraintError') {
                     const emailErr = err.errors.find(err => err.path === 'email');
                     if (emailErr) {
-                        res.status(404).json({message: 'This email is already in use'});
+                        res.status(statusCode.errorHandle).json({message: 'This email is already in use'});
                     }
 
                     const accountNameErr = err.errors.find(err => err.path === 'account_name');
@@ -77,28 +78,28 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
                         res.status(404).json({message: 'This account name is already in use'});
                     }
                 } else {
-                    console.error(err);
+                    console.error(chalk.red(err));
                     res.status(500).json({
                         message: 'Error creating user, ', error: err.message
                     });
                 }
             }
 
+            const userRoleId = createID('USER_ROLE')
             const updateRole = await UserRoles.create({
-                id: createID('USER_ROLE'),
+                id: userRoleId,
                 user_id: newUser.id,
                 role: 'ROLE_USER',
             })
-            if (!updateRole) {
-                res.status(404).json({
-                    message: 'User role created failed'
-                });
-            } else {
-                const payload = {id: newUser.id, role: updateRole.role, locked: newUser.is_locked};
 
+            if (!updateRole) {
+                res.status(404).json({message: 'User role created failed'});
+            } else {
+                const payload = {id: newUser.id, role: updateRole.role, name: newUser.name, locked: newUser.is_locked};
                 const user = {
                     id: newUser.id,
                     role: updateRole.role,
+                    name: newUser.name,
                     locked: newUser.is_locked,
                 }
                 const refreshToken = generateRefreshToken(payload);
@@ -109,18 +110,16 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
                     userType: 'user',
                     token: refreshToken,
                     req: req,
-                    timer: process.env.EXPIRES_IN_WEEK,
+                    timer: process.env.EXPIRE_IN_WEEK,
                 });
                 sendAuthResponse(res, user, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
             }
-        } catch
-            (err) {
-            console.error(err);
-            res.status(500).json({message: 'Error creating user, ', error: err.message});
+        } catch (err) {
+            console.error(chalk.red(err));
+            res.status(500).json({message: 'Error creating user, ', err});
         }
     }
-)
-;
+);
 
 //post: user log in
 router.post('/api/public/user-login', upload.none(), async (req, res) => {
@@ -131,10 +130,10 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
             }
         })
         if (!user) {
-            res.status(404).json({message: 'Sign in failed! Please check your email'});
+            res.status(statusCode.errorHandle).json({message: 'Sign in failed! Please check your email'});
         } else {
             if (user.password !== encryptPW(req.body.password)) {
-                res.status(401).json({message: 'Sign in failed! Invalid password'});
+                res.status(statusCode.errorHandle).json({message: 'Sign in failed! Invalid password'});
             } else {
                 const role = await UserRoles.findOne({
                     where: {
@@ -155,7 +154,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
 
                 const validate = await ValidateToken({userId: user.id});
                 if (validate) {
-                    refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
+                    refreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
 
                     const response = await TokenUpdate({
                         userID: user.id,

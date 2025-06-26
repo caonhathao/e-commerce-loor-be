@@ -21,7 +21,12 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-
+            createdAt: {
+                type: Sequelize.DATE,
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
+            },
             rating: {
                 type: Sequelize.ENUM('LOW', 'NORMAL', 'WARNING', 'HIGH', 'SERIOUS'),
                 defaultValue: 'LOW',

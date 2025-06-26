@@ -38,6 +38,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: 'banned',
+        timestamps: false,
         schema: 'store',
         hooks: {
             beforeCreate: (Banned, options) => {

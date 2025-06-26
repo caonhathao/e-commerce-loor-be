@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     },{
         tableName: 'bill_payment',
+        timestamps: true,
         schema: 'store',
         hooks: {
             beforeCreate: (payment, options) => {

@@ -5,11 +5,11 @@ module.exports = (sequelize, DataTypes) => {
                     primaryKey: true,
                     allowNull: false
                 },
-                userID: {
+                user_id: {
                     type: DataTypes.STRING,
                     allowNull: false,
                 },
-                userType: {
+                user_type: {
                     type: DataTypes.ENUM('user,brand'),
                     allowNull: false,
                 },
@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
                     type: DataTypes.STRING,
                     allowNull: false
                 },
-                userAgent: {
+                user_agent: {
                     type: DataTypes.STRING,
                     allowNull: false,
                     defaultValue: 'Unknown'
