@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             type: DataTypes.STRING,
         },
+        image_link:{
+            allowNull: true,
+            type:DataTypes.STRING,
+        },
         full_name: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -57,7 +61,7 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'cart',
         })
-        Users.hasMany(models.shopping_log, {
+        Users.hasMany(models.ShoppingLog, {
             foreignKey: 'user_id',
             as: 'shopping_log',
         })

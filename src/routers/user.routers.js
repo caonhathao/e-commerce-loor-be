@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {Users, UserRoles, TokenStore, Banned} = require('../models/_index');
+const {Users, UserRoles, TokenStore, Banned, Category} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
@@ -18,11 +18,12 @@ const {sendAuthResponse} = require("../utils/authUtils");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
+const {uploadToCloudinary} = require("../controllers/uploadController");
 
 //get user(s)
 router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
     } else
         try {
             const allUsers = await Users.findAll();
@@ -36,22 +37,27 @@ router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, re
 });
 
 //get full info from any account
-router.get('/api/user/get-user-by-id/:id', authenticateAccessToken, async (req, res) => {
-    try {
-        const user = await Users.findOne({
-            where: {
-                id: req.params.id,
+router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const user = await Users.findOne({
+                where: {
+                    id: req.body.userID,
+                },
+                attributes: {
+                    exclude: ['password', 'createdAt', 'updatedAt']
+                },
+            });
+            if (!user) {
+                return res.status(statusCode.errorHandle).json({message: 'No user with this id'});
             }
-        });
-        if (!user) {
-            res.status(404).json({message: 'No user with this id'});
+            return res.status(statusCode.errorHandle).json(user);
+        } catch (err) {
+            console.error(chalk.red(err));
+            res.status(500).json({message: 'Error creating user, ', err});
         }
-        res.status(200).json(user);
-    } catch (err) {
-        res.status(500).json({
-            message: 'Error retrieving user, ', error: err.message
-        });
-    }
 })
 
 //post: user register
@@ -187,7 +193,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
     }
 })
 
-//lock account
+//lock account by system
 router.put('/api/system/lock-user-by-id/:id', async (req, res) => {
     try {
         await Users.update({is_locked: true,}, {where: {id: req.params.id}});
@@ -200,115 +206,140 @@ router.put('/api/system/lock-user-by-id/:id', async (req, res) => {
     }
 })
 
-router.put('/api/manager/lock-user-by-id/:id', authenticateAccessToken, async (req, res) => {
+//lock user by manager
+router.put('/api/manager/lock-user-by-id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(401).json({message: 'Access token is invalid'});
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
     } else
         try {
-            await Users.update({is_locked: true,}, {where: {id: req.params.id}});
-            res.status(200).json('successfully');
+            await Users.update({is_locked: true,}, {where: {id: req.body.userID}});
+            return res.status(statusCode.success).json('This user is locked');
         } catch (err) {
-            res.status(500).json({message: 'error: ', error: err.message});
+            console.log(chalk.red('Error while handle: ', err))
+            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
 //restore account
-router.put('/api/manager/restore-user-by-id/:id', authenticateAccessToken, async (req, res) => {
+router.put('/api/manager/restore-user-by-id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
     } else
         try {
-            const user = await Users.update({is_locked: false,}, {where: {id: req.params.id}});
+            const user = await Users.update({is_locked: false,}, {where: {id: req.body.userID}});
 
             if (!user) {
-                res.status(404).json({message: 'No user with this id'});
+                return res.status(statusCode.errorHandle).json({message: 'No user with this id'});
             } else {
                 const ban = await Banned.findOne({
-                    where: {user_id: req.params.id}
+                    where: {user_id: req.body.userID}
                 })
 
                 if (!ban) {
-                    res.status(200).json('successfully');
+                    return res.status(statusCode.success).json('Restore this user successfully');
                 } else {
-                    res.status(404).json({message: 'This user can not restore, the user has banned'});
+                    return res.status(statusCode.errorHandle).json({message: 'This user can not restore, the user has banned'});
                 }
 
             }
         } catch (err) {
-            res.status(500).json({message: 'error: ', error: err.message});
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
 //put:update info
-router.put('/api/user/update-user-info/:id', authenticateAccessToken, upload.none(), async (req, res) => {
-    try {
-        console.log(req.body);
-        const updateFields = {};
+router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('images', 1), async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else
+        try {
+            const updateFields = {};
 
-        if (req.body.full_name && req.body.full_name !== '') {
-            updateFields.full_name = req.body.full_name;
-        }
-        if (req.body.account_name && req.body.account_name !== '') {
-            updateFields.account_name = req.body.account_name;
-        }
-        if (req.body.birthday && req.body.birthday !== '') {
-            updateFields.birthday = req.body.birthday;
-        }
-        if (req.body.email && req.body.email !== '') {
-            updateFields.email = req.body.email;
-        }
-        if (req.body.numberphone && req.body.numberphone !== '') {
-            updateFields.numberphone = req.body.numberphone;
-        }
-        if (req.body.address && req.body.address !== '') {
-            updateFields.address = req.body.address;
-        }
-
-        if (Object.keys(updateFields).length > 0) {
-            const result = await Users.update(updateFields, {
-                where: {id: req.params.id}
-            })
-            if (!result) {
-                res.status(404).json({message: 'Update failed'})
+            if (req.body.full_name && req.body.full_name !== '') {
+                updateFields.full_name = req.body.full_name;
             }
-            res.status(200).json({message: 'Updated successfully'})
-        } else {
-            res.status(403).json({message: 'No changes detected'});
+            if (req.body.account_name && req.body.account_name !== '') {
+                updateFields.account_name = req.body.account_name;
+            }
+            if (req.body.birthday && req.body.birthday !== '') {
+                updateFields.birthday = req.body.birthday;
+            }
+            if (req.body.email && req.body.email !== '') {
+                updateFields.email = req.body.email;
+            }
+            if (req.body.numberphone && req.body.numberphone !== '') {
+                updateFields.numberphone = req.body.numberphone;
+            }
+            if (req.body.address && req.body.address !== '') {
+                updateFields.address = req.body.address;
+            }
+
+            if (Object.keys(updateFields).length > 0) {
+                const [result] = await Users.update(updateFields, {
+                    where: {id: req.body.id}
+                })
+                if (result === 0) {
+                    return res.status(statusCode.errorHandle).json({message: 'Update failed'})
+                }
+            }
+
+            if (req.files && req.files.length > 0) {
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_USER);
+
+                if (!imageUrl) {
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                }
+
+                const [response] = await Users.update(
+                    {image_link: imageUrl.toString()}, {
+                        where: {id: req.body.id}
+                    })
+                if (response === 0) {
+                    return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
+                }
+                return res.status(statusCode.success).json('Updated successfully');
+            }
+            return res.status(statusCode.success).json('Updated successfully');
+        } catch (err) {
+            console.log(chalk.red('Error while handle: ', err))
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
-    } catch (err) {
-        console.log(err);
-    }
 })
 
 //put: change password
-router.put('/api/user/change-password/:id', authenticateAccessToken, upload.none(), async (req, res) => {
-    try {
-        const user = await Users.findOne({
-            where: {
-                id: req.params.id
-            }
-        })
-
-        if (!user) {
-            res.status(404).json({message: 'No user with this id'});
-        }
-        if (encryptPW(req.body.oldPassword) === user.password) {
-            await Users.update(
-                {
-                    password: encryptPW(req.body.newPassword)
-                },
-                {
-                    where: {
-                        id: req.params.id
-                    }
+router.put('/api/user/change-password', authenticateAccessToken, upload.none(), async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else {
+        try {
+            const user = await Users.findOne({
+                where: {
+                    id: req.user.id
                 }
-            )
-            res.status(200).json({message: 'Changing password successfully'});
-        } else
-            res.status(404).json({message: 'Changing failed! Please check your password'});
-    } catch
-        (err) {
-        console.log(chalk.red(err));
+            })
+
+            if (!user) {
+                return res.status(statusCode.errorHandle).json({message: 'No user found with this id'});
+            }
+            if (encryptPW(req.body.oldPassword) === user.password) {
+                await Users.update(
+                    {
+                        password: encryptPW(req.body.newPassword)
+                    },
+                    {
+                        where: {
+                            id: req.user.id
+                        }
+                    }
+                )
+                return res.status(statusCode.success).json({message: 'Changing password successfully'});
+            } else
+                return res.status(statusCode.success).json({message: 'Changing failed! Please check your password'});
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
     }
 })
 

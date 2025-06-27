@@ -126,7 +126,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
             if (!req.files || req.files.length === 0) {
                 res.status(404).json({message: 'Can not found image files!'});
             } else {
-                const imageUrl = await uploadToCloudinary(req.files, 'products');
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_PROD);
 
                 if (!imageUrl) {
                     res.status(404).json({message: 'Upload image files failed!'});
@@ -151,7 +151,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                         const imageProduct = imageUrl.map((item) => {
                             ImageProduct.create({
                                 id: createID('IMG'),
-                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_PROD),
                                 product_id: newProduct.id,
                                 image_link: item,
                             });
@@ -275,7 +275,7 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
 
 
                     //next, upload all image from req.body.images
-                    const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_P);
+                    const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_PROD);
 
                     if (!imageUrl) {
                         res.status(404).json({message: 'Upload image files failed!'});
@@ -283,7 +283,7 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                         const imageProduct = imageUrl.map((item) => {
                             ImageProduct.create({
                                 id: generateID('IMG'),
-                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_P),
+                                image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_PROD),
                                 product_id: req.body.id,
                                 image_link: item,
                             });

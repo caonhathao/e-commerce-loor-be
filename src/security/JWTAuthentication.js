@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const chalk = require('chalk');
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -33,7 +34,7 @@ function authenticateAccessToken(req, res, next) {
             next();
         });
     } catch (err) {
-        console.error('err: ', err)
+        console.error(chalk.red('err: ', err))
         return res.status(403).json({message: 'Access token is invalid or expired'});
     }
 }
