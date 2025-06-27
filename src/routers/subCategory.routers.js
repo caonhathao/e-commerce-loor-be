@@ -52,7 +52,7 @@ router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.
             if (!req.files || req.files.length === 0) {
                 res.status(statusCode.missingModule).json({message: 'Please upload images'});
             } else {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SC);
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SCAT);
                 if (!imageUrl) {
                     res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 } else {
@@ -115,7 +115,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
             }
 
             if (req.files && req.files.length > 0) {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SC);
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SCAT);
 
                 if (!imageUrl) {
                     res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});

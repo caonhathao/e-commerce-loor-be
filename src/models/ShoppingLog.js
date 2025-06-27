@@ -1,7 +1,7 @@
 const {nanoid} = require("nanoid");
 
 module.exports = (sequelize, DataTypes) => {
-    const ShoppingLog = sequelize.define('shopping_log', {
+    const ShoppingLog = sequelize.define('ShoppingLog', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,

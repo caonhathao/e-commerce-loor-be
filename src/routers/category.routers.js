@@ -36,7 +36,7 @@ router.post('/api/manager/create-category', authenticateAccessToken, upload.arra
             if (!req.files || req.files.length === 0) {
                 res.status(statusCode.missingModule).json({message: 'Please upload images'});
             } else {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_C);
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_CAT);
                 if (!imageUrl) {
                     res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 } else {
@@ -60,7 +60,7 @@ router.post('/api/manager/create-category', authenticateAccessToken, upload.arra
 })
 
 //update category
-router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
+router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.array('images', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
@@ -94,7 +94,7 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
                 }
             }
             if (req.files && req.files.length > 0) {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_C);
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_CAT);
 
                 if (!imageUrl) {
                     res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
@@ -132,7 +132,7 @@ router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async
                 res.status(statusCode.errorHandle).json({message: 'Category not found'});
             }
 
-            const imageUrl = obj.imageLink;
+            const imageUrl = obj.image_link;
             const removeImage = await destroyToCloudinary(getPublicIdFromURL(imageUrl, process.env.CLOUD_ASSET_F_C));
             if (removeImage.result !== 'ok') {
                 res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
