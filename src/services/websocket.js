@@ -27,7 +27,10 @@ module.exports.initWebSocket = function (server) {
     });
 
     io.on('connection', (socket) => {
-        console.log(chalk.cyan(`🔌 Socket connected: ${socket.id}`));
+        socket.on('register_user', (userId) => {
+            socket.join(`room_${userId}`);
+            console.log(chalk.cyan(`🔌 Socket connected: ${socket.id} with user ID: ${userId}`));
+        })
 
         socket.on('disconnect', () => {
             console.log(chalk.gray(`❎ Socket disconnected: ${socket.id}`));

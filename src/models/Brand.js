@@ -34,7 +34,6 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: 'brands',
-        timestamps: false,
         schema: 'store',
     });
 
@@ -46,10 +45,6 @@ module.exports = (sequelize, DataTypes) => {
         Brand.hasMany(models.Products, {
             foreignKey: 'brand_id',
             as: 'products',
-        })
-        Brand.hasMany(models.Notification, {
-            foreignKey: 'brand_id',
-            as: 'notifications',
         })
         Brand.hasOne(models.Banned, {
             foreignKey: 'brand_id',
