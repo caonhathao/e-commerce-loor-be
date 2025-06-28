@@ -23,6 +23,11 @@ module.exports = {
                 type: Sequelize.INTEGER,
                 allowNull: false,
             },
+            fee: {
+                type: Sequelize.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
             status: {
                 type: Sequelize.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED'),
                 allowNull: false,

@@ -15,7 +15,6 @@ const TokenTracking = async ({userID, userType, token, req, timer}) => {
         updatedAt: new Date(),
     })
     if (!response) {
-        console.error('Error while saving token and data');
         return false
     } else return true
 }
@@ -32,10 +31,8 @@ const TokenUpdate = async ({userID, token, req, timer}) => {
     })
 
     if (!response) {
-        console.log(chalk.green('Error while updating token and data'))
         return false
     } else {
-        console.log(chalk.green('Token updated'))
         return true
     }
 }
