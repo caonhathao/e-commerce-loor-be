@@ -193,6 +193,31 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
     }
 })
 
+//post: user logout
+router.post('/api/user/logout', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const response = await TokenStore.destroy({
+                where: {
+                    user_id: req.user.id,
+                    user_type: 'user',
+                    IP: req.ip || req.connection.remoteAddress,
+                }
+            })
+
+
+            if (response === 0)
+                return res.status(statusCode.errorHandle).json({message: 'Logout failed! Please try again later'});
+            else
+                return res.status(statusCode.success).json({message: 'Logout successfully'});
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
 //lock account by system
 router.put('/api/system/lock-user-by-id/:id', async (req, res) => {
     try {

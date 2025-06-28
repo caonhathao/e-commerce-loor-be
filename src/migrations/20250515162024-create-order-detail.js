@@ -4,10 +4,14 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable({schema: 'store', tableName: 'order_detail'}, {
-            order_id: {
+            id: {
                 type: Sequelize.STRING,
                 allowNull: false,
                 primaryKey: true,
+            },
+            order_id: {
+              type:Sequelize.STRING,
+              allowNull: false,
             },
             variant_id: {
                 type: Sequelize.STRING,

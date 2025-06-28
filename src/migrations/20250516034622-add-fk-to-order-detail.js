@@ -3,7 +3,6 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Thêm khóa ngoại cho order_id
     await queryInterface.sequelize.query(`
       ALTER TABLE store.order_detail
       ADD CONSTRAINT fk_order_detail_order_id
@@ -13,12 +12,11 @@ module.exports = {
       ON UPDATE CASCADE;
     `);
 
-    // Thêm khóa ngoại cho variant_id
     await queryInterface.sequelize.query(`
       ALTER TABLE store.order_detail
       ADD CONSTRAINT fk_order_detail_variant_id
       FOREIGN KEY (variant_id)
-      REFERENCES store.product_variants(sku);
+      REFERENCES store.product_variants(id);
     `);
   },
 

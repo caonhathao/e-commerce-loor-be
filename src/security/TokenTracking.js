@@ -14,7 +14,6 @@ const TokenTracking = async ({userID, userType, token, req, timer}) => {
         createdAt: new Date(),
         updatedAt: new Date(),
     })
-    console.log('check token: ', response)
     if (!response) {
         console.error('Error while saving token and data');
         return false

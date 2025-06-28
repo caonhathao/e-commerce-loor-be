@@ -1,6 +1,11 @@
 module.exports = (sequelize, DataTypes) => {
     const OrderDetail = sequelize.define('OrderDetail', {
-        order_id: {
+        id: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            primaryKey: true,
+        },
+        order_id:{
             type: DataTypes.STRING,
             allowNull: false,
             references: {
@@ -8,7 +13,6 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
             onDelete: 'CASCADE',
-            primaryKey: true,
         },
         variant_id:{
             type: DataTypes.STRING,
@@ -29,8 +33,6 @@ module.exports = (sequelize, DataTypes) => {
     },{
         tableName: 'order_detail',
         schema: 'store',
-        timestamps: false,
-        id:false
     });
 
     OrderDetail.associate = (models) => {
