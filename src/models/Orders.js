@@ -4,7 +4,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             primaryKey: true,
-            unique: true
         },
         user_id: {
             type: DataTypes.STRING,
@@ -14,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
             onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         cost: {
             type: DataTypes.INTEGER,
@@ -25,7 +25,6 @@ module.exports = (sequelize, DataTypes) => {
         },
     },{
         tableName: 'orders',
-        timestamps: false,
         schema: 'store',
     });
 
