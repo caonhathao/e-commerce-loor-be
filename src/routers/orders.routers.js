@@ -82,11 +82,11 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             }
 
             await NotifyBrand.create({
-                id:createID('NOT-BRA'),
-                brand_id:item.brand_id,
-                content:"Bạn có đơn đặt hàng mới",
-                redirect_url:"",
-                type:"ORDER",
+                id: createID('NOT-BRA'),
+                brand_id: item.brand_id,
+                content: "Bạn có đơn đặt hàng mới",
+                redirect_url: `/order-detail/${id}`,
+                type: "ORDER",
             })
         }
         return res.status(statusCode.success).json({message: 'Created successfully'});
@@ -97,7 +97,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
     }
 })
 
-//get: get all order from any customer
+//get: get all orders from any customer
 router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});

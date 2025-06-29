@@ -4,16 +4,16 @@
 
 const {createID, encryptPW} = require('../utils/global_functions');
 
-const {Users, UserRoles, TokenStore, Banned, Category} = require('../models/_index');
+const {Users, UserRoles, TokenStore, Banned} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
 
 const multer = require('multer');
 const upload = multer();
-const {authenticateToken, authenticateAccessToken} = require("../security/JWTAuthentication");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
-const authUtils = require('..//utils/authUtils')
+const authUtils = require('../utils/authUtils')
 const {sendAuthResponse} = require("../utils/authUtils");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const chalk = require("chalk");
