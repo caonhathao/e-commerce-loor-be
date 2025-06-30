@@ -31,8 +31,8 @@ module.exports = {
                 allowNull: false,
             },
             status: {
-                type: Sequelize.BOOLEAN,
-                allowNull: false,
+                type: Sequelize.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
+                allowNull: 'OUT_OF_STOCK',
             },
             has_attribute:{
                 type: Sequelize.BOOLEAN,

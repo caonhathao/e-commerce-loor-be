@@ -27,7 +27,7 @@ router.get('/api/public/get-all-products', async (req, res) => {
             res.status(404).json({message: 'No product found'});
         } else res.status(200).json(allProd);
     } catch (e) {
-        console.log(chalk.red(err));
+        console.log(chalk.red(e));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 })
@@ -261,12 +261,11 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                                 console.error('error: ', res)
                                 //when destroyed, cloudinary will send  a json with content: {'result':'ok}
                                 if (res.result === 'ok') {
-                                    console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
+                                    // console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
                                     const effectRows = await ImageProduct.destroy({
                                         where: {image_id: image.image_id}
                                     })
                                     if (effectRows > 0) {
-                                        console.log('Effect Rows deleted');
                                     } else res.status(404).json({message: 'Effect Rows deleted'});
                                 } else console.error(`Image with this public id: ${image["image_id"]} was not deleted!`)
                             }

@@ -48,9 +48,9 @@ module.exports = (sequelize, DataTypes) => {
                     allowNull: false,
                 },
                 status: {
-                    type: DataTypes.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
+                    type: DataTypes.ENUM('OPENED','CLOSED'),
                     allowNull: true,
-                    defaultValue: 'OUT_OF_STOCK',
+                    defaultValue: 'CLOSED',
                 },
                 stock: {
                     type: DataTypes.INTEGER,

@@ -175,12 +175,12 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
                     if (!response) {
                         res.status(404).json({message: 'Sign in failed! Can not generate token'});
                     } else {
-                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                         sendAuthResponse(res, userData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
                     }
                 } else {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
-                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                     await TokenTracking({
                         userID: user.id,
                         userType: 'user',
@@ -193,7 +193,8 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
             }
         }
     } catch (err) {
-        console.log(err);
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
 })
 

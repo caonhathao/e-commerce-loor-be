@@ -14,10 +14,11 @@ const {getIO} = require("../services/websocket");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const {sendAuthResponse} = require("../utils/authUtils");
 const chalk = require("chalk");
+const statusCode = require("../utils/statusCode");
 
 //post: sign-in and sign-up
 router.post('/api/public/brand-login', upload.none(), async (req, res) => {
-    console.log(req.body)
+    // console.log(req.body)
     try {
         const brand = await Brands.findOne({
             where: {
@@ -49,12 +50,12 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
                     if (!response) {
                         res.status(401).json({message: 'Sign in failed! Can not generate token'});
                     } else {
-                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                        accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                         sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
                     }
                 } else {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
-                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+                    accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
 
                     await TokenTracking({
                         userID: brand.id,
@@ -68,7 +69,8 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
             }
         }
     } catch (err) {
-        console.log(chalk.red(JSON.stringify(err)))
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
 });
 
@@ -109,7 +111,7 @@ router.post('/api/public/create-brand', upload.none(), async (req, res) => {
         const brandData = {id: newBrand.id, role: 'ROLE_VENDOR', locked: newBrand.is_locked};
 
         const refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
-        const accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+        const accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
 
         await TokenTracking({
             userID: newBrand.id,
@@ -121,7 +123,8 @@ router.post('/api/public/create-brand', upload.none(), async (req, res) => {
         sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
 
     } catch (err) {
-        console.log(err)
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
 });
 
@@ -140,13 +143,14 @@ router.post('/api/system/authentication/:id', authenticateAccessToken, async (re
             res.status(200).json({message: 'Authentication successful'});
         }
     } catch (err) {
-        console.log(chalk.red(JSON.stringify(err)))
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
 })
 
 //get: get all info or one
 //get one:
-router.get('/api/public/get-brand-by-id/:id', authenticateToken, async (req, res) => {
+router.get('/api/public/get-brand-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER' && req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
@@ -165,7 +169,7 @@ router.get('/api/public/get-brand-by-id/:id', authenticateToken, async (req, res
 });
 
 //get all:
-router.get('/api/manager/get-all-brands', authenticateToken, async (req, res) => {
+router.get('/api/manager/get-all-brands', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
@@ -173,7 +177,8 @@ router.get('/api/manager/get-all-brands', authenticateToken, async (req, res) =>
             const allBrands = await Brands.findAll();
             res.json(allBrands);
         } catch (err) {
-            console.log(err)
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
         }
 })
 
@@ -198,7 +203,8 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
             res.status(200).json('Search successfully!');
         }
     } catch (err) {
-        console.error(err);
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
 })
 
@@ -234,7 +240,8 @@ router.put('/api/vendor/brand-update/:id', authenticateAccessToken, upload.none(
                 }
             }
         } catch (err) {
-            console.log(err)
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
         }
 })
 
@@ -253,7 +260,7 @@ router.put('/api/system/lock-brand-by-id/:id', async (req, res) => {
         }
 })
 
-router.put('/api/manager/lock-brand-by-id/:id', authenticateToken, async (req, res) => {
+router.put('/api/manager/lock-brand-by-id/:id', authenticateAccessToken, async (req, res) => {
     try {
         const brand = await Brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
@@ -268,7 +275,7 @@ router.put('/api/manager/lock-brand-by-id/:id', authenticateToken, async (req, r
 })
 
 //put: restore brand
-router.put('/api/restore-brand-by-id/:id', authenticateToken, async (req, res) => {
+router.put('/api/restore-brand-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(404).json({message: 'Access token is invalid'});
     } else

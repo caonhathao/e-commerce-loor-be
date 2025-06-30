@@ -7,11 +7,11 @@ module.exports = {
     await queryInterface.addConstraint(
         { schema: 'store', tableName: 'carts' },
         {
-          fields: ['product_id'],
+          fields: ['variant_id'],
           type: 'foreign key',
-          name: 'fk_carts_product_id',
+          name: 'fk_carts_variant_id',
           references: {
-            table: { schema: 'store', tableName: 'products' },
+            table: { schema: 'store', tableName: 'product_variants' },
             field: 'id',
           },
           onDelete: 'CASCADE',
