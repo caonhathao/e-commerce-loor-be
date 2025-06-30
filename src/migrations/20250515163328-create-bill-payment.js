@@ -31,6 +31,14 @@ module.exports = {
                 allowNull: false,
                 defaultValue: 'COD',
             },
+            payment_status:{
+                type: Sequelize.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED'),
+                allowNull: false,
+                defaultValue: 'PENDING',
+            },
+            reason:{
+              type: Sequelize.STRING,
+            },
             createdAt: {
                 type: Sequelize.DATE,
             },

@@ -32,7 +32,28 @@ router.get('/api/vendor/get-all-notify-me', authenticateAccessToken, async (req,
             console.error(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
+})
 
+//get all notices for user
+router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            const result = await NotifyUser.findAll({
+                where: {
+                    user_id: req.user.id,
+                },
+                attributes: {exclude: ['id', 'user_id', 'updatedAt']},
+            })
+            if (!result) {
+                return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
+            }
+            return res.status(statusCode.success).json(result);
+        } catch (err) {
+            console.error(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
 })
 
 //accept an order by clicking to notice
