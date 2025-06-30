@@ -8,12 +8,32 @@ module.exports = {
                 type: Sequelize.STRING,
                 primaryKey: true,
                 allowNull: false,
-            }, user_id: {
+            },
+            user_id: {
                 allowNull: false,
                 type: Sequelize.STRING,
-            }, product_id: {
+            },
+            variant_id: {
                 type: Sequelize.STRING,
                 allowNull: false,
+            },
+            image_link: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            amount: {
+                type: Sequelize.INTEGER,
+                allowNull: false,
+                defaultValue: 1,
+            },
+            cost: {
+                type: Sequelize.INTEGER,
+                allowNull: false,
+            },
+            pinned: {
+                type: Sequelize.BOOLEAN,
+                allowNull: true,
+                defaultValue: false,
             },
             createdAt: {
                 type: Sequelize.DATE,

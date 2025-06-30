@@ -8,14 +8,15 @@ const {verify, sign} = require("jsonwebtoken");
 const {TokenUpdate} = require("../security/TokenTracking");
 require("ms");
 const {sendAuthResponse} = require("../utils/authUtils");
-const {red} = require("chalk");
+const chalk = require("chalk");
+const statusCode = require("../utils/statusCode");
 
 const {REFRESH_SECRET_KEY} = process.env;
 router.post('/api/auth/refresh', async (req, res) => {
     const refreshToken = await req.cookies.refresh;
 
     if (!refreshToken) {
-        return res.status(401).send('No token provided');
+        return res.status(accessDenied).send('No token provided');
     }
 
     try {
@@ -28,11 +29,11 @@ router.post('/api/auth/refresh', async (req, res) => {
         });
 
         if (checkToken.refresh !== refreshToken) {
-            return res.status(401).json({message: 'Invalid refresh token'});
+            return res.status(statusCode.accessDenied).json({message: 'Invalid refresh token'});
         }
 
         const payload = {id: decoded.id, role: decoded.role ?? '', locked: decoded.locked};
-        const newAccessToken = generateAccessToken(payload, process.env.EXPIRE_IN_SHORT);
+        const newAccessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
 
         const newRefreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
         const response = await TokenUpdate({
@@ -43,13 +44,13 @@ router.post('/api/auth/refresh', async (req, res) => {
         });
 
         if (!response) {
-            res.status(403).send('Can not update refresh token');
+            res.status(statusCode.errorHandle).send('Can not update refresh token');
         }
 
         sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
-        red(err);
-        return res.status(403).json({message: 'Invalid or expired refresh token'});
+        console.log(chalk.red(err));
+        return res.status(statusCode.errorHandle).json({message: 'Invalid or expired refresh token'});
     }
 
 })

@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             primaryKey: true,
         },
-        order_id:{
+        order_id: {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
@@ -14,13 +14,9 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: 'CASCADE',
         },
-        variant_id:{
+        variant_id: {
             type: DataTypes.STRING,
             allowNull: false,
-            references: {
-                model: 'product_variants',
-                key: 'sku',
-            }
         },
         amount: {
             type: DataTypes.INTEGER,
@@ -30,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         }
-    },{
+    }, {
         tableName: 'order_detail',
         schema: 'store',
     });

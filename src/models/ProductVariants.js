@@ -34,8 +34,8 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         status:{
-            type:DataTypes.BOOLEAN,
-            allowNull: false,
+            type:DataTypes.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
+            allowNull: 'OUT_OF_STOCK',
         },
         has_attribute: {
             type: DataTypes.STRING,

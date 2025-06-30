@@ -10,7 +10,7 @@ const {where} = require("sequelize");
 //get: get all order from any customer
 //get order detail
 router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER' || req.user.role !== 'ROLE_VENDOR') {
+    if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
@@ -27,7 +27,6 @@ router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req
                     id: req.params.id
                 }
             })
-            console.log(response)
             if (!response) return res.status(statusCode.errorHandle).json({message: 'Can not found this order detail'})
             return res.status(statusCode.success).json(response);
         } catch (err) {
