@@ -27,8 +27,16 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('COD', 'OP'),
             allowNull: false,
             defaultValue: 'COD',
+        },
+        payment_status: {
+            type: DataTypes.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED'),
+            allowNull: false,
+            defaultValue: 'PENDING',
+        },
+        reason: {
+            type: DataTypes.STRING,
         }
-    },{
+    }, {
         tableName: 'bill_payment',
         timestamps: true,
         schema: 'store',

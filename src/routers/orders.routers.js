@@ -1,6 +1,6 @@
 const _express = require('express');
 const router = _express.Router();
-const {Orders, OrderDetail, NotifyBrand, ProductVariants} = require('../models/_index');
+const {Orders, OrderDetail, NotifyBrand, ProductVariants, BillPayment} = require('../models/_index');
 const {createID} = require("../utils/global_functions");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
@@ -61,6 +61,13 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             if (!newOrder) {
                 return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
             }
+
+            await BillPayment.create({
+                id: createID('BILL'),
+                user_id: req.user.id,
+                order_id: id,
+                payment:req.body.method,
+            })
 
             //if all orders valid
             //create a socket to notice about storing order
