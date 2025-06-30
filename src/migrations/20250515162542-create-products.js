@@ -35,13 +35,13 @@ module.exports = {
                 allowNull: false,
             },
             average_price: {
-                type: Sequelize.STRING,
+                type: Sequelize.INTEGER,
                 allowNull: false,
             },
             status: {
-                type: Sequelize.ENUM('1', '0'), //1 is showing, 0 is disabled
+                type: Sequelize.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
                 allowNull: true,
-                defaultValue: '1',
+                defaultValue: 'OUT_OF_STOCK',
             },
             stock: {
                 type: Sequelize.INTEGER,

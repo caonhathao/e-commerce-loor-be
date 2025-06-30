@@ -24,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
-
     }, {
         tableName: 'product_attribute',
         schema: 'store',

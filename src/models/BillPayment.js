@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'COD',
         },
         payment_status: {
-            type: DataTypes.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED'),
+            type: DataTypes.ENUM('UNPAID', 'PAID', 'PENDING', 'CANCEL'),
             allowNull: false,
             defaultValue: 'PENDING',
         },
@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true,
         schema: 'store',
         hooks: {
-            beforeCreate: (payment, options) => {
+            beforeCreate: (payment, optionst) => {
                 payment.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
             }
         }

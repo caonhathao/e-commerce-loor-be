@@ -10,6 +10,7 @@ const multer = require('multer');
 const {getIO} = require("../services/websocket");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const chalk = require("chalk");
+const statusCode = require("../utils/statusCode");
 const upload = multer();
 
 
@@ -26,40 +27,31 @@ router.get('/api/public/get-all-products', async (req, res) => {
             res.status(404).json({message: 'No product found'});
         } else res.status(200).json(allProd);
     } catch (e) {
-        console.log(chalk.red(e))
-        res.status(500).json({message: 'Internal server error'});
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 })
 
 //to get all products from any vendor
-router.get('/api/vendor/get-all-products/:id', authenticateAccessToken, async (req, res) => {
-    console.log(req.body);
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'You are not authorized to view this page'});
-    } else
-        try {
-            const vendor = await Brands.findOne({where: {id: req.params.id}});
-
-            if (!vendor) {
-                res.status(404).json({message: 'No brand found with this id'});
-            } else {
-                //only get id, category, name, origin, price, stock and status
-                const allProd = await Products.findAll(
-                    {
-                        where: {brand_id: req.params.id},
-                        attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
-                    }
-                );
-                if (!allProd) {
-                    res.status(404).json({message: 'No product found with this id'});
-                } else {
-                    res.status(200).json(allProd);
-                }
+router.get('/api/public/get-all-products/:id', async (req, res) => {
+    try {
+        const allProd = await Products.findAll(
+            {
+                where: {brand_id: req.params.id},
+                attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
             }
-        } catch (err) {
-            console.error(err);
+        );
+        if (!allProd) {
+            res.status(404).json({message: 'No product found with this id'});
+        } else {
+            res.status(200).json(allProd);
         }
-});
+
+    } catch (err) {
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+    }
+})
 
 //get info from any product
 router.get('/api/public/get-product-by-id/:id', async (req, res) => {
@@ -76,27 +68,28 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
 
         res.status(200).json(product);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error"});
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 
 })
 
 //get Products by price in range
-router.get('/api/get-product-by-price/:p1/:p2', async (req, res) => {
+router.get('/api/pbulic/get-product-by-price/:p1/:p2', async (req, res) => {
     try {
         const result = await Products.findAll({
             where: {
-                price: {
+                average_price: {
                     [Op.between]: [parseInt(req.params.p1), parseInt(req.params.p2)]
                 }
             }
         });
         if (!result) {
-            res.status(404).json({message: 'No product found in range'});
-        } else res.status(200).json(result);
+            res.status(statusCode.errorHandle).json({message: 'No product found in range'});
+        } else res.status(statusCode.success).json(result);
     } catch (err) {
-        console.error(err);
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 });
 
@@ -105,13 +98,17 @@ router.get('/api/public/get-product-by-key/:k', async (req, res) => {
     try {
         const key = req.params.k.toLowerCase();
         const results = await Products.findAll({
-            where: Sequelize.literal(`pro_tsv @@ plainto_tsquery('vn_unaccent', '${key}')`),
+            where: Sequelize.literal(`pro_tsv @@ plainto_tsquery('store.vn_unaccent', '${key}')`),
+            attributes:{
+                exclude:['pro_tsv','createdAt','updatedAt','tags']
+            }
         });
 
         if (!results) res.status(404).json({message: 'No product found with keyword'});
         else res.status(200).json(results);
     } catch (err) {
-        console.error(err);
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 })
 
@@ -126,27 +123,28 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
             if (!req.files || req.files.length === 0) {
                 res.status(404).json({message: 'Can not found image files!'});
             } else {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_PROD);
+                const newProduct = await Products.create({
+                    id: generateID('PROD'),
+                    category_id: req.body.category_id,
+                    subcategory_id: req.body.subCategory_id,
+                    brand_id: req.user.id,
+                    name: req.body.name,
+                    origin: req.body.origin,
+                    average_price: req.body.average_price,
+                    description: req.body.description,
+                    stock: req.body.stock ?? 0,
+                    status: req.body.status ?? 'OUT_OF_STOCK',
+                    tags: tags,
+                    pro_tsv: Sequelize.literal(`to_tsvector('store.vn_unaccent', '${req.body.name} ${req.body.description}')`)
+                });
 
-                if (!imageUrl) {
-                    res.status(404).json({message: 'Upload image files failed!'});
+                if (!newProduct) {
+                    res.status(404).json({message: 'Create failed! Please check fields again!'});
                 } else {
-                    const newProduct = await Products.create({
-                        id: generateID('PROD'),
-                        category_id: req.body.category_id,
-                        subcategory_id: req.body.subCategory_id,
-                        brand_id: req.user.id,
-                        name: req.body.name,
-                        origin: req.body.origin,
-                        price: req.body.price,
-                        description: req.body.description,
-                        stock: req.body.stock ?? 0,
-                        status: req.body.status ?? 1,
-                        tags: tags,
-                    });
+                    const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_PROD);
 
-                    if (!newProduct) {
-                        res.status(404).json({message: 'Create failed! Please check fields again!'});
+                    if (!imageUrl) {
+                        res.status(404).json({message: 'Upload image files failed!'});
                     } else {
                         const imageProduct = imageUrl.map((item) => {
                             ImageProduct.create({
@@ -164,7 +162,8 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                 }
             }
         } catch (err) {
-            console.error(err);
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
@@ -186,7 +185,8 @@ router.put('/api/vendor/disabled-products/:status/:id', authenticateAccessToken,
                 res.status(200).json('Successfully disabled product');
             }
         } catch (err) {
-            console.error(err);
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
     }
 })
@@ -298,10 +298,10 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                 } else {
                     res.status(403).json({message: 'No changes detected!'});
                 }
-            } catch
-                (err) {
-                console.error(err);
-                res.status(500).json({message: 'Internal server error'});
+            } catch (err) {
+                console.log(chalk.red(err));
+                return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+                ;
             }
         }
     }
@@ -325,8 +325,8 @@ router.delete('/api/vendor/delete-product/:id', authenticateAccessToken, async (
             io.emit('delete-product', {id: req.params.id});
             res.status(200).json({message: 'Product deleted!'});
         } catch (err) {
-            console.error(err);
-            return res.status(500).json({message: "Server error"});
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
