@@ -44,17 +44,17 @@ module.exports = (sequelize, DataTypes) => {
                     allowNull: false,
                 },
                 average_price: {
-                    type: DataTypes.STRING,
+                    type: DataTypes.INTEGER,
                     allowNull: false,
                 },
                 status: {
-                    type: DataTypes.ENUM('1', '0'), //1 is showing, 0 is disabled
+                    type: DataTypes.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
                     allowNull: true,
-                    defaultValue: '1',
+                    defaultValue: 'OUT_OF_STOCK',
                 },
                 stock: {
                     type: DataTypes.INTEGER,
-                    allowNull: false,
+                    allowNull: true,
                 },
                 other_variant: {
                     type: DataTypes.BOOLEAN,
@@ -77,8 +77,7 @@ module.exports = (sequelize, DataTypes) => {
                 },
                 pro_tsv: {
                     type: DataTypes.TSVECTOR,
-                    allowNull:
-                        true,
+                    allowNull: true,
                 },
             },
             {

@@ -26,7 +26,11 @@ router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, re
         return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
     } else
         try {
-            const allUsers = await Users.findAll();
+            const allUsers = await Users.findAll({
+                attributes: {
+                    exclude: ['password']
+                },
+            });
             if (!allUsers) {
                 res.status(404).json({message: 'No Users found.'});
             }
@@ -44,7 +48,7 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
         try {
             const user = await Users.findOne({
                 where: {
-                    id: req.body.userID,
+                    id: req.user.id
                 },
                 attributes: {
                     exclude: ['password', 'createdAt', 'updatedAt']
@@ -53,7 +57,7 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
             if (!user) {
                 return res.status(statusCode.errorHandle).json({message: 'No user with this id'});
             }
-            return res.status(statusCode.errorHandle).json(user);
+            return res.status(statusCode.success).json(user);
         } catch (err) {
             console.error(chalk.red(err));
             res.status(500).json({message: 'Error creating user, ', err});
