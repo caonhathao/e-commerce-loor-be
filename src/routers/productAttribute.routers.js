@@ -5,13 +5,14 @@ const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const chalk = require("chalk");
 const {generateID} = require("../utils/global_functions");
 const router = _express.Router();
+const statusCode = require("../utils/statusCode");
 
 //get all variant's attributes from any variant
-router.get('/api/public/get-all-variant-attributes/:id', async (req, res) => {
+router.get('/api/public/get-all-variant-attributes', async (req, res) => {
     try {
         const allAttributes = await ProductAttributes.findAll(
             {
-                where: {variant_id: req.params.id},
+                where: {variant_id: req.body.id},
                 attributes: {exclude: ['id', 'variant_id', 'createdAt', 'updatedAt']},
             }
         );
@@ -21,7 +22,7 @@ router.get('/api/public/get-all-variant-attributes/:id', async (req, res) => {
         res.status(200).json(allAttributes);
     } catch (err) {
         console.error(chalk.red(err));
-        res.status(500).json({message: 'Internal server error'});
+        res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
     }
 })
 
@@ -50,8 +51,9 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
             }
 
             res.status(200).json({message: 'Created successfully'});
-        } catch (e) {
-            console.error(chalk.red(e));
+        } catch (err) {
+            console.error(chalk.red(err));
+            res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
         }
     }
 })

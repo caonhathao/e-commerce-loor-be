@@ -53,7 +53,7 @@ router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
 //create new variants by vendor
 router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You are not authorized to view this page'});
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
         try {
             delete ProductVariants.rawAttributes.variant_id;
@@ -102,7 +102,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
 //update variant's information
 router.put('/api/vendor/update-variant-with-id/:variantId', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'You are not authorized to view this page'});
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
         try {
             const updateFields = {};
@@ -128,11 +128,32 @@ router.put('/api/vendor/update-variant-with-id/:variantId', authenticateAccessTo
                 } else res.status(200).json({message: 'Update variant successfully!'});
             }
 
-        } catch (e) {
-            console.error(e);
-            res.status(500).json({message: 'Internal server error'});
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
     }
 })
+router.delete('/api/vendor/delete-variant-with-id', authenticateAccessToken, upload.none(), async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+    } else {
+        try {
+            const result = ProductVariants.destroy({
+                where: {
+                    id: req.body.id
+                }
+            })
+            if (result === 0) {
+                res.status(statusCode.errorHandle).json({message: 'Delete failed'});
+            } else {
+                res.status(statusCode.success).json({message: 'Delete variant successfully!'});
+            }
 
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+    }
+})
 module.exports = router;

@@ -80,4 +80,24 @@ router.put('/api/user/update-shipping-address', authenticateAccessToken, upload.
         }
     }
 })
+
+//remove address
+router.delete('/api/user/remove-shipping-address', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else
+        try {
+            const result = await ShippingAddress.destroy({
+                where: {
+                    id: req.body.id,
+                    user_id: req.user.id
+                }
+            })
+            if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Remove address failed! Please try again later'});
+            return res.status(statusCode.success).json('Remove address successfully');
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
 module.exports = router;

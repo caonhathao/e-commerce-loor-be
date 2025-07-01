@@ -128,6 +128,30 @@ router.post('/api/public/create-brand', upload.none(), async (req, res) => {
     }
 });
 
+//post: user logout
+router.post('/api/vendor/logout', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const response = await TokenStore.destroy({
+                where: {
+                    brand_id: req.user.id,
+                    user_type: 'brand',
+                    IP: req.ip || req.connection.remoteAddress,
+                }
+            })
+
+            if (response === 0)
+                return res.status(statusCode.errorHandle).json({message: 'Logout failed! Please try again later'});
+            else
+                return res.status(statusCode.success).json({message: 'Logout successfully'});
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
 router.post('/api/system/authentication/:id', authenticateAccessToken, async (req, res) => {
     try {
         if (req.user.role !== 'ROLE_VENDOR') {
@@ -209,7 +233,7 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
 })
 
 //put: update brand's info
-router.put('/api/vendor/brand-update/:id', authenticateAccessToken, upload.none(), async (req, res) => {
+router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(404).json({message: 'Access token is invalid'});
     } else
@@ -231,7 +255,7 @@ router.put('/api/vendor/brand-update/:id', authenticateAccessToken, upload.none(
             if (Object.keys(updateFields).length > 0) {
                 const brand = await Brands.update(
                     updateFields,
-                    {where: {id: req.params.id}}
+                    {where: {id: req.user.id}}
                 );
                 if (!brand) {
                     res.status(404).json({message: 'Update error! Please check your information again!'});

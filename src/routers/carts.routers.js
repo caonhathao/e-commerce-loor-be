@@ -96,7 +96,10 @@ router.delete('/api/user/delete-cart', authenticateAccessToken, async (req, res)
     } else
         try {
             const result = await Carts.destroy({
-                where: {id: req.body.id}
+                where: {
+                    id: req.body.id,
+                    user_id: req.user.id
+                }
             })
 
             if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Delete cart failed! Please try again later'});
