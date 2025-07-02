@@ -14,6 +14,9 @@ const chalk = require("chalk");
 //get all product's variants by vendor
 router.get('/api/public/get-all-variants/:id', async (req, res) => {
     try {
+        delete ProductVariants.rawAttributes.variant_id;
+        delete ProductVariants.tableAttributes.variant_id;
+        ProductVariants.refreshAttributes();
         const allVariants = await ProductVariants.findAll(
             {
                 where: {product_id: req.params.id},
@@ -35,6 +38,9 @@ router.get('/api/public/get-all-variants/:id', async (req, res) => {
 //get any variant's information
 router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
     try {
+        delete ProductVariants.rawAttributes.variant_id;
+        delete ProductVariants.tableAttributes.variant_id;
+        ProductVariants.refreshAttributes();
         const variant = await ProductVariants.findOne(
             {
                 where: {id: req.params.id}
@@ -60,6 +66,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
             delete ProductVariants.tableAttributes.variant_id;
             ProductVariants.refreshAttributes();
             console.log(Object.keys(ProductVariants.rawAttributes));
+            console.log(req.body)
 
             const newVariant = await ProductVariants.create({
                 id: generateID('VARI'),
@@ -85,7 +92,10 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
                 }
 
                 const updatedProduct = await Products.update(
-                    {stock: product.stock + Number(req.body.stock)},
+                    {
+                        stock: product.stock + Number(req.body.stock),
+                        has_attribute: true
+                    },
                     {where: {id: req.params.id}}
                 );
                 if (!updatedProduct) {
@@ -100,13 +110,20 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
 })
 
 //update variant's information
-router.put('/api/vendor/update-variant-with-id/:variantId', authenticateAccessToken, upload.none(), async (req, res) => {
+router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, upload.none(), async (req, res) => {
+    console.log(req.body)
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+        return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
         try {
             const updateFields = {};
 
+            if (req.body.name && req.body.name !== '') {
+                updateFields['name'] = req.body.name;
+            }
+            if (req.body.status && req.body.status !== '') {
+                updateFields['status'] = req.body.status;
+            }
             if (req.body.sku && req.body.sku !== '') {
                 updateFields['sku'] = req.body.sku;
             }
@@ -119,15 +136,16 @@ router.put('/api/vendor/update-variant-with-id/:variantId', authenticateAccessTo
             if (Object.keys(updateFields).length > 0) {
                 const update = await ProductVariants.update(updateFields, {
                     where: {
-                        id: req.params.variantId
+                        id: req.params.id
                     }
                 });
 
                 if (update[0] === 0) {
-                    res.status(404).json({message: 'Update failed'});
-                } else res.status(200).json({message: 'Update variant successfully!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Update failed'});
+                } else return res.status(statusCode.success).json({message: 'Update variant successfully!'});
             }
 
+            return res.status(statusCode.success).json({message: 'Update variant successfully!'});
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

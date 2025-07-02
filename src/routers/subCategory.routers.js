@@ -44,17 +44,18 @@ router.get('/api/public/get-sub-category/:id', async (req, res) => {
 
 //Post
 //Create new sub category
-router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.none(), async (req, res) => {
+
+router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.array('image', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             if (!req.files || req.files.length === 0) {
-                res.status(statusCode.missingModule).json({message: 'Please upload images'});
+                return res.status(statusCode.missingModule).json({message: 'Please upload images'});
             } else {
                 const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SCAT);
                 if (!imageUrl) {
-                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 } else {
                     const id = createID('SUB-CAT');
                     const sub = await SubCategory.create({
@@ -65,20 +66,20 @@ router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.
                         image_link: imageUrl.toString()
                     });
                     if (!sub) {
-                        res.status(statusCode.errorHandle).json('Creating failed!');
+                        return res.status(statusCode.errorHandle).json('Creating failed!');
                     }
-                    res.status(statusCode.success).json('Created successfully');
+                    return res.status(statusCode.success).json('Created successfully');
                 }
-                res.status(statusCode.success).json('Created sub category successfully!' + req.body.name);
+                return res.status(statusCode.success).json('Created sub category successfully!' + req.body.name);
             }
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
 //Update sub category
-router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, upload.array('images',10), async (req, res) => {
+router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
@@ -128,7 +129,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
                 if (!response) {
                     res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
                 }
-                 return res.status(statusCode.success).json('Updated successfully');
+                return res.status(statusCode.success).json('Updated successfully');
             }
             res.status(statusCode.success).json('Updated successfully');
         } catch (err) {

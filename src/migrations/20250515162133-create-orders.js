@@ -19,6 +19,10 @@ module.exports = {
                 },
                 onDelete: 'CASCADE',
             },
+            brand_id:{
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
             cost: {
                 type: Sequelize.INTEGER,
                 allowNull: false,

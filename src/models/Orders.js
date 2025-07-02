@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
+        brand_id:{
+            type:DataTypes.STRING,
+            allowNull:true,
+        },
         cost: {
             type: DataTypes.INTEGER,
             allowNull: false,
