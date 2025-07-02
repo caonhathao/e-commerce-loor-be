@@ -1,4 +1,4 @@
-const {ProductAttributes} = require('../models/_index');
+const {ProductAttributes, ProductVariants} = require('../models/_index');
 
 const _express = require('express');
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -8,7 +8,8 @@ const router = _express.Router();
 const statusCode = require("../utils/statusCode");
 
 //get all variant's attributes from any variant
-router.get('/api/public/get-all-variant-attributes', async (req, res) => {
+router.post('/api/public/get-all-variant-attributes', async (req, res) => {
+    console.log(req.body)
     try {
         const allAttributes = await ProductAttributes.findAll(
             {
@@ -19,6 +20,7 @@ router.get('/api/public/get-all-variant-attributes', async (req, res) => {
         if (!allAttributes) {
             res.status(404).json({message: 'No attributes found with this id'});
         }
+        console.log(allAttributes)
         res.status(200).json(allAttributes);
     } catch (err) {
         console.error(chalk.red(err));
@@ -29,8 +31,9 @@ router.get('/api/public/get-all-variant-attributes', async (req, res) => {
 
 //create new attributes for variant
 router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessToken, async (req, res) => {
+    console.log(req.body)
     if (req.user.role !== 'ROLE_VENDOR') {
-        return res.status(403).json({message: 'You are not allowed to access this action'});
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
         try {
             const deleteAtt = await ProductAttributes.destroy({
@@ -42,18 +45,26 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
                 const newProductAttribute = await ProductAttributes.create({
                     id: generateID('ATTR'),
                     variant_id: req.params.id,
-                    nameAtt: key,
-                    valueAtt: value,
+                    name_att: key,
+                    value_att: value,
                 });
                 if (!newProductAttribute) {
-                    return res.status(400).json({message: 'Created failed'});
+                    return res.status(statusCode.errorHandle).json({message: 'Created failed'});
+                } else {
+                    const updateVariant = await ProductVariants.update({
+                        has_attributes: true
+                    }, {
+                        where: {id: req.params.id}
+                    })
+
+                    if (!updateVariant) return res.status(statusCode.errorHandle).json({message: 'Can not update variant'});
                 }
             }
 
-            res.status(200).json({message: 'Created successfully'});
+            return res.status(statusCode.success).json({message: 'Created successfully'});
         } catch (err) {
             console.error(chalk.red(err));
-            res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
         }
     }
 })

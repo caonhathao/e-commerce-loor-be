@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
         variant_id: {
             type: DataTypes.STRING,
             allowNull: false,
+            references: {
+                model: 'product_variants',
+                key: 'id',
+            }
         },
         amount: {
             type: DataTypes.INTEGER,
@@ -35,6 +39,10 @@ module.exports = (sequelize, DataTypes) => {
         OrderDetail.belongsTo(models.Orders, {
             foreignKey: 'order_id',
             as: 'orders',
+        })
+        OrderDetail.belongsTo(models.ProductVariants,{
+            foreignKey: 'variant_id',
+            as: 'product_variants',
         })
     }
 

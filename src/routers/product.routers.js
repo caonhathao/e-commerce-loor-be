@@ -58,6 +58,7 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     try {
         const product = await Products.findOne({
             where: {id: req.params.id},
+            attributes: {exclude: ['pro_tsv', 'tags','other_variant','createdAt','updatedAt']},
             include: [{
                 model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
             }],
@@ -71,7 +72,28 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
+})
 
+router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+    } else
+        try {
+            const product = await Products.findOne({
+                where: {id: req.params.id},
+                include: [{
+                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                }]
+            })
+
+            if (!product) {
+                return res.status(statusCode.errorHandle).json({message: "No product found with this id"});
+            }
+            return res.status(statusCode.success).json(product);
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
 })
 
 //get Products by price in range
@@ -99,8 +121,8 @@ router.get('/api/public/get-product-by-key/:key', async (req, res) => {
         const key = req.params.key.toLowerCase();
         const results = await Products.findAll({
             where: Sequelize.literal(`pro_tsv @@ plainto_tsquery('store.vn_unaccent', '${key}')`),
-            attributes:{
-                exclude:['pro_tsv','createdAt','updatedAt','tags']
+            attributes: {
+                exclude: ['pro_tsv', 'createdAt', 'updatedAt', 'tags']
             }
         });
 
@@ -193,9 +215,9 @@ router.put('/api/vendor/disabled-products', authenticateAccessToken, async (req,
 //put: update product
 router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
         //console.log(chalk.green('Product update info: ' + JSON.stringify(req.body)))
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
-    } else
+        if (req.user.role !== 'ROLE_VENDOR') {
+            res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+        } else
             try {
                 const product = await Products.findOne({
                     where: {
@@ -238,6 +260,10 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                 }
                 if (req.body.tags && req.body.tags !== '') {
                     updateFields.tags = req.body.tags.split(",");
+                }
+
+                if (req.body.name && req.body.description && req.body.tags) {
+                    updateFields.pro_tsv = Sequelize.literal(`to_tsvector('store.vn_unaccent', '${req.body.name} ${req.body.description} ${req.body.tags.split(",")}')`)
                 }
 
                 //update data in product table

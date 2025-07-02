@@ -22,7 +22,7 @@ router.get('/api/vendor/get-all-notify-me', authenticateAccessToken, async (req,
                 where: {
                     brand_id: req.user.id,
                 },
-                attributes: {exclude: ['id', 'brand_id', 'updatedAt']},
+                attributes: {exclude: [ 'brand_id', 'updatedAt']},
             })
             if (!result) {
                 return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
