@@ -1,5 +1,5 @@
 const {TokenStore} = require('../models/_index')
-const {createID} = require('../utils/global_functions')
+const {createID} = require('../utils/functions.global')
 const ms = require("ms");
 const chalk = require("chalk");
 const TokenTracking = async ({userID, userType, token, req, timer}) => {

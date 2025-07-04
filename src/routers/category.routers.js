@@ -7,7 +7,7 @@ const multer = require('multer');
 const upload = multer();
 
 const {Category, SubCategory, ImageProduct} = require('../models/_index');
-const {createID, getPublicIdFromURL} = require("../utils/global_functions");
+const {createID, getPublicIdFromURL} = require("../utils/functions.global");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const chalk = require('chalk');

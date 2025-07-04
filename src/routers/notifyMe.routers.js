@@ -1,7 +1,7 @@
 const _express = require('express');
 const router = _express.Router();
 const {Orders, OrderDetail, NotifyBrand, NotifyUser, ProductVariants} = require('../models/_index');
-const {createID} = require("../utils/global_functions");
+const {createID} = require("../utils/functions.global");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
 const multer = require("multer");
