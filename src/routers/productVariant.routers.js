@@ -1,7 +1,7 @@
 const {ProductVariants, Products} = require('../models/_index')
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
-const {generateID} = require('../utils/global_functions');
+const {generateID} = require('../utils/functions.global');
 const router = _express.Router();
 
 const {authenticateAccessToken} = require('../security/JWTAuthentication')

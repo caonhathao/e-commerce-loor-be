@@ -3,7 +3,7 @@ const {ProductAttributes, ProductVariants} = require('../models/_index');
 const _express = require('express');
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const chalk = require("chalk");
-const {generateID} = require("../utils/global_functions");
+const {generateID} = require("../utils/functions.global");
 const router = _express.Router();
 const statusCode = require("../utils/statusCode");
 

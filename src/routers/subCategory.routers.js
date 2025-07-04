@@ -1,7 +1,7 @@
 const _express = require('express');
 const router = _express.Router();
 const {SubCategory, Category} = require('../models/_index');
-const {createID, getPublicIdFromURL} = require('../utils/global_functions');
+const {createID, getPublicIdFromURL} = require('../utils/functions.global');
 const multer = require('multer');
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const statusCode = require("../utils/statusCode");

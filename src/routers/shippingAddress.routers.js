@@ -1,4 +1,4 @@
-const {createID} = require('../utils/global_functions');
+const {createID} = require('../utils/functions.global');
 
 const _express = require('express');
 const router = _express.Router();

@@ -1,8 +1,8 @@
-// theses are all api for product
+// theses are all api for the product
 const {Products, ImageProduct} = require('../models/_index');
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
-const {createID, getPublicIdFromURL, generateID} = require("../utils/global_functions");
+const {createID, getPublicIdFromURL, generateID} = require("../utils/functions.global");
 const router = _express.Router();
 
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -17,15 +17,30 @@ const upload = multer();
 //get all products
 router.get('/api/public/get-all-products', async (req, res) => {
     try {
-        const allProd = await Products.findAll({
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
+
+        const {count, rows} = await Products.findAndCountAll({
+            limit,
+            offset,
             attributes: {exclude: ['createdAt', 'description', 'otherVariant', 'pro_tsv', 'stock', 'tags', 'updatedAt']},
             include: [{
                 model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id', 'id', 'image_id']},
             }],
         });
-        if (!allProd) {
-            res.status(404).json({message: 'No product found'});
-        } else res.status(200).json(allProd);
+
+        if (!rows || rows.length === 0) {
+            return res.status(statusCode.errorHandle).json({message: 'No product found'});
+        } else {
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        }
     } catch (e) {
         console.log(chalk.red(e));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -35,18 +50,32 @@ router.get('/api/public/get-all-products', async (req, res) => {
 //to get all products from any vendor by user
 router.get('/api/public/get-all-products/:id', async (req, res) => {
     try {
-        const allProd = await Products.findAll(
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
+
+        const {count, rows} = await Products.findAndCountAll(
             {
+                limit,
+                offset,
                 where: {brand_id: req.params.id},
+                include: [{
+                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                }],
                 attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
             }
         );
-        if (!allProd) {
-            res.status(404).json({message: 'No product found with this id'});
+        if (!rows || rows.length === 0) {
+            return res.status(statusCode.errorHandle).json({message: 'No product found'});
         } else {
-            res.status(200).json(allProd);
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
         }
-
     } catch (err) {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -58,9 +87,9 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     try {
         const product = await Products.findOne({
             where: {id: req.params.id},
-            attributes: {exclude: ['pro_tsv', 'tags','other_variant','createdAt','updatedAt']},
+            attributes: {exclude: ['pro_tsv', 'tags', 'other_variant', 'createdAt', 'updatedAt']},
             include: [{
-                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                model: ImageProduct, as: "image_products", attributes: ['image_link']
             }],
         });
         if (!product) {
@@ -79,17 +108,30 @@ router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else
         try {
-            const product = await Products.findOne({
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Products.findAndCountAll({
+                limit,
+                offset,
                 where: {id: req.params.id},
                 include: [{
                     model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
                 }]
             })
 
-            if (!product) {
-                return res.status(statusCode.errorHandle).json({message: "No product found with this id"});
+            if (!rows || rows.length === 0) {
+                return res.status(statusCode.errorHandle).json({message: 'No product found'});
+            } else {
+                return res.status(statusCode.success).json({
+                    current_page: page,
+                    total_items: count,
+                    current_items: rows.length,
+                    total_pages: Math.ceil(count / limit),
+                    data: rows,
+                });
             }
-            return res.status(statusCode.success).json(product);
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -99,16 +141,30 @@ router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (
 //get Products by price in range
 router.get('/api/public/get-product-by-price', async (req, res) => {
     try {
-        const result = await Products.findAll({
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
+
+        const {count, rows} = await Products.findAndCountAll({
+            limit,
+            offset,
             where: {
                 average_price: {
                     [Op.between]: [parseInt(req.body.p1), parseInt(req.body.p2)]
                 }
             }
         });
-        if (!result) {
-            res.status(statusCode.errorHandle).json({message: 'No product found in range'});
-        } else res.status(statusCode.success).json(result);
+        if (!rows || rows.length === 0) {
+            return res.status(statusCode.errorHandle).json({message: 'No product found'});
+        } else {
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        }
     } catch (err) {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -134,7 +190,7 @@ router.get('/api/public/get-product-by-key/:key', async (req, res) => {
     }
 })
 
-//post: create new product
+//post: create a new product
 router.post('/api/vendor/create-products', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
