@@ -16,7 +16,7 @@ const sequelize = new Sequelize(
 
 const umzug = new Umzug({
     migrations: {
-        glob: 'migrations/*.js',
+        glob: 'src/migrations/*.js',
         resolve: ({ name, path, context }) => {
             const migration = require(path);
             return {
@@ -25,23 +25,32 @@ const umzug = new Umzug({
                 down: async () => migration.down(context.queryInterface, context.Sequelize),
             };
         },
-
     },
     context: {
         queryInterface: sequelize.getQueryInterface(),
         Sequelize,
     },
-    storage: new SequelizeStorage({ sequelize}),
+    storage: new SequelizeStorage({
+        sequelize,
+        schema: 'store', // 🔥 đảm bảo SequelizeMeta nằm trong schema đúng
+    }),
     logger: console,
 });
 
 module.exports = async () => {
     // // XÓA schema trước (xóa toàn bộ bảng trong schema đó)
     // await sequelize.query('DROP SCHEMA IF EXISTS store CASCADE;');
+    // console.log('🗑️ Dropped schema "store"');
     //
     // // TẠO LẠI schema
     // await sequelize.query('CREATE SCHEMA IF NOT EXISTS store;');
+    // console.log('📦 Created schema "store"');
 
-    // CHẠY LẠI migration
+    // 🧩 Kiểm tra có tìm thấy migration không
+    const migrations = await umzug.pending();
+    console.log('🔎 Migrations found:', migrations.map(m => m.name));
+
+    // ⚙️ CHẠY migration
     await umzug.up();
+    console.log('✅ Migrations executed');
 };

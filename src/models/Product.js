@@ -90,8 +90,7 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             }
-        )
-    ;
+        );
 
     Products.associate = (models) => {
 
@@ -124,6 +123,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'brand_id',
             as: 'brands'
         });
+        Products.hasOne(models.FeaturedProduct,{
+            foreignKey:'product_id',
+            as:'featured_product',
+        })
     };
 
     return Products;
