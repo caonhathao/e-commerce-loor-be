@@ -1,10 +1,6 @@
-// theses are all api for the product
-const {Products, ImageProduct} = require('../models/_index');
-const _express = require('express');
+const {Products, ImageProduct, ProductVariants, ProductAttributes,FeaturedProduct} = require('../models/_index');
 const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/functions.global");
-const router = _express.Router();
-
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
@@ -12,6 +8,8 @@ const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/upload
 const chalk = require("chalk");
 const statusCode = require("../utils/statusCode");
 const upload = multer();
+const _express = require('express');
+const router = _express.Router();
 
 
 //get all products
@@ -47,7 +45,7 @@ router.get('/api/public/get-all-products', async (req, res) => {
     }
 })
 
-//to get all products from any vendor by user
+//to get all products from a brand by user
 router.get('/api/public/get-all-products/:id', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -82,14 +80,70 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
     }
 })
 
-//get info from any product
+//get all products by category/subcategory and options
+router.get('/api/public/get-all-products-by-filter', async (req, res) => {
+    try {
+        const {origin, average_price,category_id,subcategory_id} = req.query;
+        const whereClause = {};
+        if (origin) {
+            whereClause.origin = origin;
+        }
+        if (average_price) {
+            whereClause.average_price = average_price;
+        }
+        if (category_id) {
+            whereClause.category_id = category_id;
+        }
+        if (subcategory_id) {
+            whereClause.subcategory_id = subcategory_id;
+        }
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
+
+        const {count, rows} = await Products.findAndCountAll(
+            {
+                limit,
+                offset,
+                where: whereClause,
+                attributes: {exclude: ['pro_tsv', 'tags', 'other_variant', 'createdAt', 'updatedAt']},
+                include: [{
+                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                }],
+            }
+        )
+
+        if (!rows || rows.length === 0) {
+            return res.status(statusCode.errorHandle).json({message: 'No product found'});
+        } else {
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            })
+        }
+
+    } catch (err) {
+        console.log(chalk.red(err));
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+    }
+})
+
+//get product's info by user (customer)
 router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     try {
         const product = await Products.findOne({
             where: {id: req.params.id},
             attributes: {exclude: ['pro_tsv', 'tags', 'other_variant', 'createdAt', 'updatedAt']},
             include: [{
-                model: ImageProduct, as: "image_products", attributes: ['image_link']
+                model: ImageProduct, as: "image_products", attributes: ['image_link'],
+            }, {
+                model: ProductVariants, as: "product_variants", attributes: ['id', 'name', 'price', 'sku'],
+                include: [{
+                    model: ProductAttributes, as: "product_attributes", attributes: ['name_att', 'value_att'],
+                }]
             }],
         });
         if (!product) {
@@ -103,34 +157,23 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     }
 })
 
+//get product's info by vendor (brand)
 router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else
         try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20
-            const offset = (page - 1) * limit
-
-            const {count, rows} = await Products.findAndCountAll({
-                limit,
-                offset,
+            const result = await Products.findOne({
                 where: {id: req.params.id},
                 include: [{
                     model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
                 }]
             })
 
-            if (!rows || rows.length === 0) {
+            if (result === 0) {
                 return res.status(statusCode.errorHandle).json({message: 'No product found'});
             } else {
-                return res.status(statusCode.success).json({
-                    current_page: page,
-                    total_items: count,
-                    current_items: rows.length,
-                    total_pages: Math.ceil(count / limit),
-                    data: rows,
-                });
+                return res.status(statusCode.success).json(result);
             }
         } catch (err) {
             console.log(chalk.red(err));
@@ -138,7 +181,7 @@ router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (
         }
 })
 
-//get Products by price in range
+//get products by price in range
 router.get('/api/public/get-product-by-price', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -171,7 +214,7 @@ router.get('/api/public/get-product-by-price', async (req, res) => {
     }
 });
 
-//get Products by keyword
+//get products by keyword
 router.get('/api/public/get-product-by-key/:key', async (req, res) => {
     try {
         const key = req.params.key.toLowerCase();
@@ -213,12 +256,17 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                     stock: req.body.stock ?? 0,
                     status: req.body.status ?? 'OUT_OF_STOCK',
                     tags: tags,
-                    pro_tsv: Sequelize.literal(`to_tsvector('store.vn_unaccent', '${req.body.name} ${req.body.description}')`)
+                    pro_tsv: Sequelize.literal(`to_tsvector('store.vn_unaccent', '${req.body.name} ${req.body.description} ${req.body.tags}')`)
                 });
 
                 if (!newProduct) {
                     res.status(404).json({message: 'Create failed! Please check fields again!'});
                 } else {
+                    await FeaturedProduct.create({
+                        id:createID('FPRD'),
+                        product_id: newProduct.id,
+                    })
+
                     const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_PROD);
 
                     if (!imageUrl) {
