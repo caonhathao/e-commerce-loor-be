@@ -26,10 +26,6 @@ module.exports = {
                 allowNull: false,
                 defaultValue: 1,
             },
-            cost: {
-                type: Sequelize.INTEGER,
-                allowNull: false,
-            },
             pinned: {
                 type: Sequelize.BOOLEAN,
                 allowNull: true,
