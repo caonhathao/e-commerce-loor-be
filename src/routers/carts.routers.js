@@ -33,24 +33,43 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
         }
 })
 
-//post: add product (variant) to customer's cart
+//post: add product (variant) to the customer's cart
 router.post('/api/user/add-to-cart', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
         try {
-            const newCart = await Carts.create({
-                id: createID('CART'),
-                user_id: req.user.id,
-                variant_id: req.body.variant_id,
-                amount: req.body.amount,
-                image_link: req.body.image_link,
-                cost: req.body.cost,
-                pinned: req.body.pinned,
-            })
-
-            if (!newCart) {
-                return res.status(statusCode.errorHandle).json({message: 'Can not add this product to cart'});
+            for (let i = 0; i < req.body.list.length; i++) {
+                const exist = await Carts.findOne({
+                    where: {
+                        user_id: req.user.id,
+                        variant_id: req.body.list[i].id,
+                    },
+                })
+                let newCart;
+                if (exist !== 0 && exist) {
+                    newCart = await Carts.update({
+                        amount: exist.amount + req.body.list[i].amount,
+                        updatedAt: Sequelize.literal('CURRENT_TIMESTAMP'),
+                    }, {
+                        where: {
+                            user_id: req.user.id,
+                            variant_id: req.body.list[i].id,
+                        }
+                    })
+                } else {
+                    newCart = await Carts.create({
+                        id: createID('CART'),
+                        user_id: req.user.id,
+                        variant_id: req.body.list[i].id,
+                        amount: req.body.list[i].amount,
+                        image_link: req.body.list[i].image_link,
+                        pinned: false,
+                    })
+                    if (!newCart) {
+                        return res.status(statusCode.errorHandle).json({message: 'Can not add this product to cart'});
+                    }
+                }
             }
             return res.status(statusCode.success).json({message: 'Added to cart successfully'});
         } catch (err) {

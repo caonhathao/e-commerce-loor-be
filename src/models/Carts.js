@@ -23,10 +23,6 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             defaultValue: 1,
         },
-        cost: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
         pinned: {
             type: DataTypes.BOOLEAN,
             allowNull: true,

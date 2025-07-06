@@ -1,4 +1,4 @@
-const {Products, ImageProduct, ProductVariants, ProductAttributes,FeaturedProduct} = require('../models/_index');
+const {Products, ImageProduct, ProductVariants, ProductAttributes, FeaturedProduct} = require('../models/_index');
 const {Op, Sequelize} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/functions.global");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -83,7 +83,7 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
 //get all products by category/subcategory and options
 router.get('/api/public/get-all-products-by-filter', async (req, res) => {
     try {
-        const {origin, average_price,category_id,subcategory_id} = req.query;
+        const {origin, average_price, category_id, subcategory_id} = req.query;
         const whereClause = {};
         if (origin) {
             whereClause.origin = origin;
@@ -137,14 +137,20 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
         const product = await Products.findOne({
             where: {id: req.params.id},
             attributes: {exclude: ['pro_tsv', 'tags', 'other_variant', 'createdAt', 'updatedAt']},
-            include: [{
-                model: ImageProduct, as: "image_products", attributes: ['image_link'],
-            }, {
-                model: ProductVariants, as: "product_variants", attributes: ['id', 'name', 'price', 'sku'],
-                include: [{
-                    model: ProductAttributes, as: "product_attributes", attributes: ['name_att', 'value_att'],
-                }]
-            }],
+            include: [
+                {
+                    model: ImageProduct, as: "image_products", attributes: ['image_link'],
+                },
+                {
+                    model: ProductVariants, as: "product_variants", attributes: ['id', 'name', 'price', 'sku'],
+                    include: [{
+                        model: ProductAttributes, as: "product_attributes", attributes: ['name_att', 'value_att'],
+                    }]
+                },
+                {
+                    model: FeaturedProduct, as: "featured_product", attributes: ['product_wishlist'],
+                }
+            ],
         });
         if (!product) {
             return res.status(404).json({message: "No product found with this id"});
@@ -263,7 +269,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                     res.status(404).json({message: 'Create failed! Please check fields again!'});
                 } else {
                     await FeaturedProduct.create({
-                        id:createID('FPRD'),
+                        id: createID('FPRD'),
                         product_id: newProduct.id,
                     })
 
