@@ -27,7 +27,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //check valid order in every list
             //create a socket to notice about check-in order
-            io.emit('checking order', {message: `Checking...${counting}`})
+            io.to(`room_${req.user.id}`).emit('checking order', {message: `Checking...${counting}`})
             for (const child of item.list) {
                 delete ProductVariants.rawAttributes.variant_id;
                 delete ProductVariants.tableAttributes.variant_id;
@@ -51,7 +51,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //if pass,
             //creates a socket to notice about status order
-            io.emit('creating new order', {message: `Creating...${counting}`})
+            io.to(`room_${req.user.id}`).emit('creating new order', {message: `Creating...${counting}`})
 
             const newOrder = await Orders.create({
                 id: id,
@@ -75,7 +75,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //if all orders valid
             //create a socket to notice about storing order
-            io.emit('storing order', {message: 'Storing...'})
+            io.to(`room_${req.user.id}`).emit('storing order', {message: 'Storing...'})
             for (const child of item.list) {
                 const product = await OrderDetail.create({
                     id: createID('ORD-DET'),
