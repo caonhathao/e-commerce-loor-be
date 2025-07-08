@@ -168,7 +168,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
 
                     const response = await TokenUpdate({
-                        userID: user.id,
+                        user_id: user.id,
                         token: refreshToken,
                         req: req,
                         timer: process.env.EXPIRE_IN_WEEK,
@@ -183,7 +183,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
                     accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                     await TokenTracking({
-                        userID: user.id,
+                        user_id: user.id,
                         userType: 'user',
                         token: refreshToken,
                         req: req,
