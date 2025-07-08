@@ -19,7 +19,7 @@ const TokenTracking = async ({userID, userType, token, req, timer}) => {
     } else return true
 }
 
-const TokenUpdate = async ({userID, token, req, timer}) => {
+const TokenUpdate = async ({user_id, token, req, timer}) => {
     const response = await TokenStore.update({
         refresh: token,
         user_agent: req.get('User-Agent') || 'Unknown',
@@ -27,7 +27,7 @@ const TokenUpdate = async ({userID, token, req, timer}) => {
         expiredAt: new Date(Date.now() + ms(timer)),
         updatedAt: new Date(),
     }, {
-        where: {user_id: userID}
+        where: {user_id: user_id}
     })
 
     if (!response) {

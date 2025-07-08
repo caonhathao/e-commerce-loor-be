@@ -40,9 +40,10 @@ module.exports = (sequelize, DataTypes) => {
         Carts.belongsTo(models.Users, {
             foreignKey: 'user_id', as: 'users',
         })
-        Carts.hasMany(models.ProductVariants, {
-            foreignKey: 'variant_id', as: 'product_variants',
-        })
+        Carts.belongsTo(models.ProductVariants, {
+            foreignKey: 'variant_id',
+            as: 'product_variants',
+        });
     }
     return Carts;
 }

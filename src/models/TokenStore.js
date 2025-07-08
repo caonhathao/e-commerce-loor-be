@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
                     allowNull: false,
                 },
                 user_type: {
-                    type: DataTypes.ENUM('user,brand'),
+                    type: DataTypes.ENUM('user','brand'),
                     allowNull: false,
                 },
                 refresh: {
@@ -48,11 +48,11 @@ module.exports = (sequelize, DataTypes) => {
 
     TokenStore.associate = (models) => {
         TokenStore.belongsTo(models.Users, {
-            foreignKey: 'id',
+            foreignKey: 'user_id',
             as: 'users',
         })
         TokenStore.belongsTo(models.Brands, {
-            foreignKey: 'id',
+            foreignKey: 'user_id',
             as: 'brands',
         })
     }

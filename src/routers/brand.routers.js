@@ -1,7 +1,7 @@
 /*these are all api to get and handle with brand */
 const {createID, encryptPW} = require('../utils/functions.global');
 
-const {Brands, users} = require('../models/_index');
+const {Brands, users, Users} = require('../models/_index');
 const express = require("express");
 const {createToken, generateRefreshToken, generateAccessToken} = require("../security/JWTProvider");
 const router = express.Router();
@@ -15,6 +15,7 @@ const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTr
 const {sendAuthResponse} = require("../utils/authUtils");
 const chalk = require("chalk");
 const statusCode = require("../utils/statusCode");
+const {uploadToCloudinary} = require("../controllers/uploadController");
 
 //post: sign-in and sign-up
 router.post('/api/public/brand-login', upload.none(), async (req, res) => {
@@ -235,7 +236,7 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
 //put: update brand's info
 router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             const updateFields = {};
@@ -253,16 +254,32 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
             }
 
             if (Object.keys(updateFields).length > 0) {
-                const brand = await Brands.update(
+                const [result] = await Brands.update(
                     updateFields,
                     {where: {id: req.user.id}}
                 );
-                if (!brand) {
-                    res.status(404).json({message: 'Update error! Please check your information again!'});
-                } else {
-                    res.status(200).json({message: 'Update successful!'});
+                if (result===0) {
+                    return res.status(statusCode.errorHandle).json({message: 'Update error! Please check your information again!'});
                 }
             }
+
+            if (req.files && req.files.length > 0) {
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_USER);
+
+                if (!imageUrl) {
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                }
+
+                const [response] = await Brands.update(
+                    {image_link: imageUrl.toString()}, {
+                        where: {id: req.body.id}
+                    })
+                if (response === 0) {
+                    return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
+                }
+                return res.status(statusCode.success).json('Updated successfully');
+            }
+            return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})

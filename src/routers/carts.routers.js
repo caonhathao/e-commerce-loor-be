@@ -1,6 +1,6 @@
 const {createID} = require('../utils/functions.global');
 
-const {Carts} = require('../models/_index');
+const {Carts, ProductVariants, Brands, Products} = require('../models/_index');
 const express = require("express");
 const router = express.Router();
 const statusCode = require('../utils/statusCode');
@@ -21,12 +21,61 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['createdAt', 'updatedAt']},
+                attributes: {exclude: ['createdAt', 'updatedAt', 'user_id']},
+                include: [{
+                    model: ProductVariants,
+                    as: 'product_variants',
+                    attributes: ['name','price'],
+                    include: [{
+                        model: Products,
+                        as: 'products',
+                        attributes: ['status', 'brand_id'],
+                        include: [{
+                            model: Brands,
+                            as: 'brands',
+                            attributes: ['name', 'image_link'],
+                        }]
+                    }]
+                }],
+                order: [
+                    [{model: ProductVariants, as: 'product_variants'},
+                        {model: Products, as: 'products'},
+                        'brand_id', 'ASC'] // Sắp xếp tăng dần theo brand_id
+                ]
             })
             if (!result) {
                 return res.status(statusCode.errorHandle).json({message: 'No cart found with this user\'s id'});
             }
-            return res.status(statusCode.success).json(result);
+
+            const groupedByBrand = {};
+
+            for (const cart of result) {
+                const brand = cart.product_variants?.products?.brands;
+                const brandId = cart.product_variants?.products?.brand_id;
+
+                if (!groupedByBrand[brandId]) {
+                    groupedByBrand[brandId] = {
+                        brand_id: brandId,
+                        brand_name: brand?.name || '',
+                        brand_image: brand?.image_link || '',
+                        items: [],
+                    };
+                }
+
+                groupedByBrand[brandId].items.push(cart);
+            }
+
+            const groupedResult = Object.values(groupedByBrand).map(group => {
+                group.items = group.items.map(cart => {
+                    const cartJSON = cart.toJSON(); // chuyển instance Sequelize thành object thuần
+                    delete cartJSON.product_variants.products.brands; // xoá trường products
+                    delete cartJSON.product_variants.products.brand_id;
+                    return cartJSON;
+                });
+                return group;
+            });
+
+            return res.status(200).json(groupedResult);
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

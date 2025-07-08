@@ -16,15 +16,16 @@ router.post('/api/auth/refresh', async (req, res) => {
     const refreshToken = await req.cookies.refresh;
 
     if (!refreshToken) {
-        return res.status(accessDenied).send('No token provided');
+        return res.status(statusCode.accessDenied).send('No token provided');
     }
 
     try {
         const decoded = verify(refreshToken, REFRESH_SECRET_KEY);
+        console.log(decoded.id)
 
         const checkToken = await TokenStore.findOne({
             where: {
-                userID: decoded.id
+                user_id: decoded.id
             }
         });
 
@@ -37,7 +38,7 @@ router.post('/api/auth/refresh', async (req, res) => {
 
         const newRefreshToken = generateRefreshToken(payload, process.env.EXPIRE_IN_WEEK);
         const response = await TokenUpdate({
-            userID: decoded.id,
+            user_id: decoded.id,
             token: newRefreshToken,
             req: req,
             timer: process.env.EXPIRE_IN_WEEK,
@@ -49,7 +50,7 @@ router.post('/api/auth/refresh', async (req, res) => {
 
         sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
-        console.log(chalk.red(err));
+        console.log(chalk.red('53',err));
         return res.status(statusCode.errorHandle).json({message: 'Invalid or expired refresh token'});
     }
 
