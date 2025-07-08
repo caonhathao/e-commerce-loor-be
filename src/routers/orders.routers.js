@@ -58,7 +58,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 user_id: req.user.id,
                 brand_id: item.brand_id,
                 cost: item.cost,
-                fee: item.fee,
+                fee: item.fee || 0,
                 status: 'PENDING',
             })
 

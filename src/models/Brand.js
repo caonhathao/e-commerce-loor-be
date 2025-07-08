@@ -5,6 +5,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             primaryKey: true,
         },
+        image_link: {
+            type:DataTypes.STRING,
+            allowNull: true,
+        },
         name: {
             type: DataTypes.STRING,
             allowNull: true,

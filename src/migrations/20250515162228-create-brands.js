@@ -9,6 +9,10 @@ module.exports = {
                 allowNull: false,
                 primaryKey: true,
             },
+            image_link: {
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
             name: {
                 type: Sequelize.STRING,
                 allowNull: true,
