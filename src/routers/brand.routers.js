@@ -1,14 +1,14 @@
 /*these are all api to get and handle with brand */
 const {createID, encryptPW} = require('../utils/functions.global');
 
-const {Brands, users, Users} = require('../models/_index');
+const {Brands} = require('../models/_index');
 const express = require("express");
-const {createToken, generateRefreshToken, generateAccessToken} = require("../security/JWTProvider");
+const {generateRefreshToken, generateAccessToken} = require("../security/JWTProvider");
 const router = express.Router();
 
 const multer = require("multer");
 const upload = multer();
-const {authenticateToken, authenticateAccessToken} = require("../security/JWTAuthentication");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {Sequelize} = require("sequelize");
 const {getIO} = require("../services/websocket");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");

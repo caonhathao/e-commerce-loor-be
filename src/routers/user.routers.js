@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/functions.global');
 
-const {Users, UserRoles, TokenStore, Banned} = require('../models/_index');
+const {Users, UserRoles, TokenStore, Banned, ShippingAddress} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
@@ -53,6 +53,11 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
                 attributes: {
                     exclude: ['password', 'createdAt', 'updatedAt']
                 },
+                include: [{
+                    model: ShippingAddress,
+                    as: 'shipping_address',
+                    attributes: ['id', 'address', 'ward', 'city', 'country', 'zipcode', 'is_default']
+                }]
             });
             if (!user) {
                 return res.status(statusCode.errorHandle).json({message: 'No user with this id'});

@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
             type:DataTypes.STRING,
             allowNull:true,
         },
+        addresses: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
         cost: {
             type: DataTypes.INTEGER,
             allowNull: false,
