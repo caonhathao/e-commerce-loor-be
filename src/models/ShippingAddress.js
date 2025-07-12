@@ -1,4 +1,4 @@
-const {nanoid}=require('nanoid');
+const {nanoid} = require('nanoid');
 
 module.exports = (sequelize, DataTypes) => {
     const ShippingAddress = sequelize.define('ShippingAddress', {
@@ -20,12 +20,29 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        ward: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        city: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        country: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 'Vietnam',
+        },
+        zipcode: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         is_default: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,
         }
-    },{
+    }, {
         tableName: 'shipping_address',
         schema: 'store',
         hooks: {
@@ -37,7 +54,7 @@ module.exports = (sequelize, DataTypes) => {
     })
 
     ShippingAddress.associate = (models) => {
-        ShippingAddress.belongsTo(models.Users,{
+        ShippingAddress.belongsTo(models.Users, {
             foreignKey: 'user_id',
             as: 'users',
         })

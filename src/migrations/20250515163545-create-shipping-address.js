@@ -22,6 +22,23 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
+            ward: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            city: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            country: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                defaultValue: 'Vietnam',
+            },
+            zipcode: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             is_default: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,

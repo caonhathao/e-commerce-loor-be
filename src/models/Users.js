@@ -1,4 +1,4 @@
-const { nanoid } = require('nanoid');
+const {nanoid} = require('nanoid');
 
 module.exports = (sequelize, DataTypes) => {
     const Users = sequelize.define('Users', {
@@ -7,9 +7,9 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             type: DataTypes.STRING,
         },
-        image_link:{
+        image_link: {
             allowNull: true,
-            type:DataTypes.STRING,
+            type: DataTypes.STRING,
         },
         full_name: {
             type: DataTypes.STRING,
@@ -23,13 +23,18 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DATE,
             allowNull: true,
         },
+        gender: {
+            type: DataTypes.ENUM('MALE', 'FEMALE', 'OTHER'),
+            allowNull: false,
+            defaultValue: 'OTHER',
+        },
         email: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
         },
         numberphone: {
-            type: DataTypes.STRING(11),
+            type: DataTypes.STRING(10),
             allowNull: true,
         },
         password: {
