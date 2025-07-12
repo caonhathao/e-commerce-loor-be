@@ -8,7 +8,7 @@ const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
-const {ShippingAddress} = require("../models/_index");
+const {ShippingAddress, Provinces, Districts} = require("../models/_index");
 
 //get all address
 router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res) => {
@@ -20,8 +20,10 @@ router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['user_id']},
-            })
+                attributes: { exclude: ['user_id'] },
+                order: [['is_default', 'DESC']],
+            });
+
             if (!result) {
                 return res.status(statusCode.errorHandle).json({message: 'No address found with this user\'s id'});
             }
@@ -38,10 +40,24 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else {
         try {
+            const wardExist = await Districts.findOne({
+                where: {
+                    province_id: req.body.city,
+                },
+            })
+
+            const cityExist = await Provinces.findOne({
+                where: {
+                    id: req.body.city,
+                },
+            })
+
             const newAddress = await ShippingAddress.create({
                 id: createID('SHIP-ADDRESS'),
                 user_id: req.user.id,
                 address: req.body.address,
+                ward: wardExist.name,
+                city: cityExist.name,
                 is_default: req.body.is_default,
             })
 

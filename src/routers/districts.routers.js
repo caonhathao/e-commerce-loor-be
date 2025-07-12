@@ -10,11 +10,11 @@ const {Sequelize} = require("sequelize");
 const chalk = require("chalk");
 const statusCode = require("../utils/statusCode");
 
-router.get('/api/public/get-all-districts', upload.none(), async (req, res) => {
+router.get('/api/public/get-all-districts/:province_id', upload.none(), async (req, res) => {
     try {
         const result = await Districts.findAll({
             where: {
-                province_id: req.body.province_id
+                province_id: req.params.province_id
             },
             attributes: {exclude: ['createdAt', 'updatedAt','province_id','code_sgo']},
         })

@@ -36,6 +36,7 @@ module.exports = (sequelize, DataTypes) => {
         zipcode: {
             type: DataTypes.STRING,
             allowNull: false,
+            defaultValue:'0'
         },
         is_default: {
             type: DataTypes.BOOLEAN,

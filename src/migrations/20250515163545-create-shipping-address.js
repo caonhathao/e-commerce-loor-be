@@ -38,6 +38,7 @@ module.exports = {
             zipcode: {
                 type: Sequelize.STRING,
                 allowNull: false,
+                defaultValue:'0'
             },
             is_default: {
                 type: Sequelize.BOOLEAN,
