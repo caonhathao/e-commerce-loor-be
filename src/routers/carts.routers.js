@@ -25,7 +25,7 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
                 include: [{
                     model: ProductVariants,
                     as: 'product_variants',
-                    attributes: ['name','price'],
+                    attributes: ['name', 'price'],
                     include: [{
                         model: Products,
                         as: 'products',
@@ -96,7 +96,7 @@ router.post('/api/user/add-to-cart', authenticateAccessToken, upload.none(), asy
                     },
                 })
                 let newCart;
-                if (exist !== 0 && exist) {
+                if (exist !== null) {
                     newCart = await Carts.update({
                         amount: exist.amount + req.body.list[i].amount,
                         updatedAt: Sequelize.literal('CURRENT_TIMESTAMP'),
@@ -108,7 +108,7 @@ router.post('/api/user/add-to-cart', authenticateAccessToken, upload.none(), asy
                     })
                 } else {
                     newCart = await Carts.create({
-                        id: createID('CART'),
+                        id: createID('CART1'),
                         user_id: req.user.id,
                         variant_id: req.body.list[i].id,
                         amount: req.body.list[i].amount,
@@ -163,14 +163,19 @@ router.delete('/api/user/delete-cart', authenticateAccessToken, async (req, res)
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Carts.destroy({
-                where: {
-                    id: req.body.id,
-                    user_id: req.user.id
-                }
-            })
+            console.log(req.body)
 
-            if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Delete cart failed! Please try again later'});
+            for (let i = 0; i < req.body.length; i++) {
+                console.log(req.body[i])
+                const result = await Carts.destroy({
+                    where: {
+                        id: req.body[i],
+                        user_id: req.user.id
+                    }
+                })
+                if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Delete cart failed! Please try again later'});
+            }
+
             return res.status(statusCode.success).json({message: 'Delete cart successfully'});
         } catch (err) {
             console.log(chalk.red(err));
