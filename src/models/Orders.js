@@ -19,9 +19,14 @@ module.exports = (sequelize, DataTypes) => {
             type:DataTypes.STRING,
             allowNull:true,
         },
-        addresses: {
+        address: {
             type: DataTypes.STRING,
             allowNull: false
+        },
+        shipping_type:{
+          type:DataTypes.ENUM('GIAO_HANG_NHANH','GIAO_HANG_TIET_KIEM','GIAO HANG_HOA_TOC'),
+            allowNull:false,
+            defaultValue:'GIAO_HANG_NHANH',
         },
         cost: {
             type: DataTypes.INTEGER,

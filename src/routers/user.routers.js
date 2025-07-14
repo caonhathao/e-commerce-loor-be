@@ -56,7 +56,9 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
                 include: [{
                     model: ShippingAddress,
                     as: 'shipping_address',
-                    attributes: ['id', 'address', 'ward', 'city', 'country', 'zipcode', 'is_default']
+                    attributes: ['id', 'address', 'ward', 'city', 'country', 'zipcode', 'is_default'],
+                    separate: true,
+                    order: [['is_default', 'DESC']]
                 }]
             });
             if (!user) {
@@ -313,7 +315,7 @@ router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('
 
             if (Object.keys(updateFields).length > 0) {
                 const [result] = await Users.update(updateFields, {
-                    where: {id: req.body.id}
+                    where: {id: req.user.id}
                 })
                 if (result === 0) {
                     return res.status(statusCode.errorHandle).json({message: 'Update failed'})
@@ -329,7 +331,7 @@ router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('
 
                 const [response] = await Users.update(
                     {image_link: imageUrl.toString()}, {
-                        where: {id: req.body.id}
+                        where: {id: req.user.id}
                     })
                 if (response === 0) {
                     return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});

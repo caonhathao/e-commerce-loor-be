@@ -20,7 +20,7 @@ router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: { exclude: ['user_id'] },
+                attributes: {exclude: ['user_id']},
                 order: [['is_default', 'DESC']],
             });
 
@@ -51,6 +51,14 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                     id: req.body.city,
                 },
             })
+
+            if (req.body.is_default) {
+                await ShippingAddress.update(
+                    { is_default: false },
+                    { where: { is_default: true } }
+                );
+            }
+
 
             const newAddress = await ShippingAddress.create({
                 id: createID('SHIP-ADDRESS'),
