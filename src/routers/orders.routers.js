@@ -21,6 +21,8 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
         let counting = 0;
         const io = getIO();
 
+        console.log(req.body)
+
         for (const item of req.body.list) {
             counting++;
             const id = createID('ORD');
@@ -29,9 +31,11 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             //create a socket to notice about check-in order
             io.to(`room_${req.user.id}`).emit('checking order', {message: `Checking...${counting}`})
             for (const child of item.list) {
+
                 delete ProductVariants.rawAttributes.variant_id;
                 delete ProductVariants.tableAttributes.variant_id;
                 ProductVariants.refreshAttributes();
+
                 const product = await ProductVariants.findOne({
                     where: {
                         id: child.variant_id
@@ -60,7 +64,8 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 cost: item.cost,
                 fee: item.fee || 0,
                 status: 'PENDING',
-                address: item.address,
+                shipping_type: req.body.shipping_type,
+                address: req.body.address,
             })
 
             if (!newOrder) {

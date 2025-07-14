@@ -27,6 +27,11 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
+            shipping_type:{
+                type:Sequelize.ENUM('GIAO_HANG_NHANH','GIAO_HANG_TIET_KIEM','GIAO HANG_HOA_TOC'),
+                allowNull:false,
+                defaultValue:'GIAO_HANG_NHANH',
+            },
             cost: {
                 type: Sequelize.INTEGER,
                 allowNull: false,

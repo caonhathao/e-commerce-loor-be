@@ -36,12 +36,13 @@ module.exports = (sequelize, DataTypes) => {
         zipcode: {
             type: DataTypes.STRING,
             allowNull: false,
-            defaultValue:'0'
+            defaultValue: '0'
         },
         is_default: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,
+            unique: true,
         }
     }, {
         tableName: 'shipping_address',
