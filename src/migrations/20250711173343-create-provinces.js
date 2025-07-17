@@ -26,11 +26,15 @@ module.exports = {
         type: Sequelize.ENUM('MIEN_BAC', 'MIEN_TRUNG', 'MIEN_NAM', 'MIEN_TAI')
       },
       createdAt: {
+        allowNull: false,
         type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW')
       },
       updatedAt: {
+        allowNull: false,
         type: Sequelize.DATE,
-      },
+        defaultValue: Sequelize.fn('NOW')
+      }
     })
   },
 

@@ -94,7 +94,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
                 const updatedProduct = await Products.update(
                     {
                         stock: product.stock + Number(req.body.stock),
-                        has_attribute: true
+                        other_variant: true
                     },
                     {where: {id: req.params.id}}
                 );

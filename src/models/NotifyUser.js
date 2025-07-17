@@ -24,6 +24,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('SUCCESS', 'WARNING', 'ERROR', 'BAN','ADS','NOTICE'),
             defaultValue: 'NOTICE',
             allowNull: false
+        },
+        status:{
+            type:DataTypes.ENUM("READ","IDLE"),
+            defaultValue:"IDLE",
+            allowNull:false,
         }
     }, {
         tableName: 'notify_user',

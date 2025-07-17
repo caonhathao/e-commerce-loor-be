@@ -43,7 +43,7 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
                 if (validate) {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
                     const response = await TokenUpdate({
-                        userID: brand.id,
+                        user_id: brand.id,
                         token: refreshToken,
                         req: req,
                         timer: process.env.EXPIRE_IN_WEEK,

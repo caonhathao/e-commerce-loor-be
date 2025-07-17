@@ -18,7 +18,7 @@ const umzug = new Umzug({
     migrations: {
         glob: 'src/migrations/*.js',
         resolve: ({ name, path, context }) => {
-            const migration = require(path);
+            const migration = require(path);2
             return {
                 name,
                 up: async () => migration.up(context.queryInterface, context.Sequelize),

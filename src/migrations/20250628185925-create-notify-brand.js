@@ -29,6 +29,11 @@ module.exports = {
                 defaultValue: 'NOTICE',
                 allowNull: false
             },
+            status:{
+                type:Sequelize.ENUM("READ","IDLE"),
+                defaultValue:"IDLE",
+                allowNull:false,
+            },
             createdAt: {
                 type: Sequelize.DATE,
             },

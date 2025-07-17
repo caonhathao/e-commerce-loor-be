@@ -18,11 +18,11 @@ router.get('/api/public/get-all-category', async (req, res) => {
     try {
         const allCategory = await Category.findAll();
         if (!allCategory) {
-            res.status(404).json({message: 'Fetching data failed'});
-        } else res.status(200).json(allCategory);
+            return res.status(404).json({message: 'Fetching data failed'});
+        } else return res.status(200).json(allCategory);
     } catch (err) {
         console.log(chalk.red('Error while handle: ', err))
-        res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 });
 
@@ -30,15 +30,15 @@ router.get('/api/public/get-all-category', async (req, res) => {
 //create new category
 router.post('/api/manager/create-category', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             if (!req.files || req.files.length === 0) {
-                res.status(statusCode.missingModule).json({message: 'Please upload images'});
+                return res.status(statusCode.missingModule).json({message: 'Please upload images'});
             } else {
                 const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_CAT);
                 if (!imageUrl) {
-                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 } else {
                     const idCategory = createID('CAT');
                     const newCategory = await Category.create({
@@ -48,21 +48,21 @@ router.post('/api/manager/create-category', authenticateAccessToken, upload.arra
                         image_link: imageUrl.toString()
                     })
                     if (!newCategory) {
-                        res.status(statusCode.errorHandle).json({message: 'Create category failed'});
+                        return res.status(statusCode.errorHandle).json({message: 'Create category failed'});
                     }
-                    res.status(statusCode.success).json('Created successfully');
+                    return res.status(statusCode.success).json('Created successfully');
                 }
             }
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
 //update category
 router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.array('images', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             const item = await Category.findOne({
@@ -71,7 +71,7 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
                 }
             })
             if (!item) {
-                res.status(statusCode.errorHandle).json({message: 'Category not found'});
+                return res.status(statusCode.errorHandle).json({message: 'Category not found'});
             }
 
             const updateFields = {};
@@ -90,14 +90,14 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
                 })
 
                 if (effectRows === 0) {
-                    res.status(statusCode.errorHandle).json({message: 'Updating data failed'});
+                    return res.status(statusCode.errorHandle).json({message: 'Updating data failed'});
                 }
             }
             if (req.files && req.files.length > 0) {
                 const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_CAT);
 
                 if (!imageUrl) {
-                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 }
 
                 const response = await Category.update(
@@ -105,21 +105,21 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
                         where: {id: req.params.id}
                     })
                 if (!response) {
-                    res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
                 }
-                res.status(statusCode.success).json('Updated successfully');
+                return res.status(statusCode.success).json('Updated successfully');
             }
-            res.status(statusCode.success).json('Updated successfully');
+            return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 });
 
 //DELETE
 router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             const obj = await Category.findOne({
@@ -129,13 +129,13 @@ router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async
             })
 
             if (!obj) {
-                res.status(statusCode.errorHandle).json({message: 'Category not found'});
+                return res.status(statusCode.errorHandle).json({message: 'Category not found'});
             }
 
             const imageUrl = obj.image_link;
             const removeImage = await destroyToCloudinary(getPublicIdFromURL(imageUrl, process.env.CLOUD_ASSET_F_C));
             if (removeImage.result !== 'ok') {
-                res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
+                return res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
             } else {
                 const result = await Category.destroy({
                     where: {
@@ -143,13 +143,13 @@ router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async
                     }
                 })
                 if (!result) {
-                    res.status(statusCode.errorHandle).json({message: 'Deleting failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Deleting failed!'});
                 }
-                res.status(statusCode.success).json('Deleted successfully');
+                return res.status(statusCode.success).json('Deleted successfully');
             }
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
