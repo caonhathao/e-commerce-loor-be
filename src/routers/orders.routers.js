@@ -6,7 +6,7 @@ const {
     NotifyBrand,
     NotifyUser,
     ProductVariants,
-    BillPayment,
+    Receipt,
     Brands
 } = require('../models/_index');
 const {createID} = require("../utils/functions.global");
@@ -83,7 +83,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
             }
 
-            await BillPayment.create({
+            await Receipt.create({
                 id: createID('BILL'),
                 user_id: req.user.id,
                 order_id: id,
@@ -151,7 +151,7 @@ router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res)
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['user_id', 'shipping_type','brand_id','updatedAt']},
+                attributes: {exclude: ['user_id', 'shipping_type', 'brand_id', 'updatedAt']},
             })
             if (!rows || rows.length === 0) {
                 return res.status(statusCode.errorHandle).json({message: 'No order found with this user\'s id'});
@@ -255,21 +255,39 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
 })
 
 //delete: cancel an order
-router.delete('/api/user/cancel-order/:id', authenticateAccessToken, async (req, res) => {
+router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Orders.destroy({
+            const result = await Orders.findOne({
                 where: {
                     id: req.params.id,
                     user_id: req.user.id,
                 }
             })
-            if (result === 0) {
+            if (!result) {
                 return res.status(statusCode.errorHandle).json({message: 'No order found with this id'});
-            } else return res.status(statusCode.success).json({message: 'Deleted successfully'});
-        } catch (err) {
+            }
+
+            const update = await Orders.update({
+                    status: 'CANCELED',
+                }, {
+                    where: {id: req.params.id}
+                }
+            )
+
+            await NotifyBrand.create({
+                id: createID('NOT-BRA'),
+                brand_id: result.brand_id,
+                content: "Đơn hàng bị huy",
+                redirect_url: `/order-detail/${req.params.id}`,
+                type: "ORDER",
+                status: "IDLE",
+            })
+            return res.status(statusCode.success).json({message: 'Deleted successfully'});
+        } catch
+            (err) {
             console.error(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }

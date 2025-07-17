@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable({schema: 'store', tableName: 'bill_payment'}, {
+        await queryInterface.createTable({schema: 'store', tableName: 'receipt'}, {
             id: {
                 type: Sequelize.STRING,
                 allowNull: false,
@@ -31,24 +31,28 @@ module.exports = {
                 allowNull: false,
                 defaultValue: 'COD',
             },
-            payment_status:{
+            payment_status: {
                 type: Sequelize.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED'),
                 allowNull: false,
                 defaultValue: 'PENDING',
             },
-            reason:{
-              type: Sequelize.STRING,
+            reason: {
+                type: Sequelize.STRING,
             },
             createdAt: {
                 type: Sequelize.DATE,
+                allowNull: false,
+                defaultValue: Sequelize.fn('NOW'),
             },
             updatedAt: {
                 type: Sequelize.DATE,
+                allowNull: false,
+                defaultValue: Sequelize.fn('NOW'),
             },
         })
     },
 
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable({schema: 'store', tableName: 'bill_payment'});
+        await queryInterface.dropTable({schema: 'store', tableName: 'receipt'});
     }
 };

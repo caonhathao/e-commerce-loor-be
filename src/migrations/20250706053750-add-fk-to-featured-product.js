@@ -15,7 +15,7 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.sequelize.query(`
-            ALTER TABLE store.bill_payment
+            ALTER TABLE store.receipt
             DROP
             CONSTRAINT IF EXISTS fk_featured_product_product_id
         `);
