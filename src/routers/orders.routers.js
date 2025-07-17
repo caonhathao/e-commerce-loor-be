@@ -1,6 +1,14 @@
 const _express = require('express');
 const router = _express.Router();
-const {Orders, OrderDetail, NotifyBrand, ProductVariants, BillPayment} = require('../models/_index');
+const {
+    Orders,
+    OrderDetail,
+    NotifyBrand,
+    NotifyUser,
+    ProductVariants,
+    BillPayment,
+    Brands
+} = require('../models/_index');
 const {createID} = require("../utils/functions.global");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
@@ -29,7 +37,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //check valid order in every list
             //create a socket to notice about check-in order
-            io.to(`room_${req.user.id}`).emit('checking_order', {message: `Checking...${counting}`, step: counting+1})
+            io.to(`room_${req.user.id}`).emit('checking_order', {message: `Checking...${counting}`, step: counting + 1})
             for (const child of item.list) {
 
                 delete ProductVariants.rawAttributes.variant_id;
@@ -55,7 +63,10 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //if pass,
             //creates a socket to notice about status order
-            io.to(`room_${req.user.id}`).emit('creating_new_order', {message: `Creating...${counting}`, step: counting+2})
+            io.to(`room_${req.user.id}`).emit('creating_new_order', {
+                message: `Creating...${counting}`,
+                step: counting + 2
+            })
 
             const newOrder = await Orders.create({
                 id: id,
@@ -81,7 +92,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //if all orders valid
             //create a socket to notice about storing order
-            io.to(`room_${req.user.id}`).emit('storing_order', {message: 'Storing...', step: counting+3})
+            io.to(`room_${req.user.id}`).emit('storing_order', {message: 'Storing...', step: counting + 3})
             for (const child of item.list) {
                 const product = await OrderDetail.create({
                     id: createID('ORD-DET'),
@@ -98,12 +109,22 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 }
             }
 
+            await NotifyUser.create({
+                id: createID('NOT-USE'),
+                user_id: req.user.id,
+                content: "Bạn có đơn đặt hàng mới",
+                redirect_url: `/order-detail/${id}`,
+                type: "NOTICE",
+                status: "IDLE",
+            })
+
             await NotifyBrand.create({
                 id: createID('NOT-BRA'),
                 brand_id: item.brand_id,
                 content: "Bạn có đơn đặt hàng mới",
                 redirect_url: `/order-detail/${id}`,
                 type: "ORDER",
+                status: "IDLE",
             })
         }
         return res.status(statusCode.success).json({message: 'Created successfully'});
@@ -120,16 +141,28 @@ router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res)
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Orders.findAll({
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['user_id']},
+                attributes: {exclude: ['user_id', 'shipping_type','brand_id','updatedAt']},
             })
-            if (!result) {
+            if (!rows || rows.length === 0) {
                 return res.status(statusCode.errorHandle).json({message: 'No order found with this user\'s id'});
             }
-            return res.status(statusCode.success).json(result);
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
         } catch (err) {
             console.error(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

@@ -1,5 +1,3 @@
-const {nanoid} = require('nanoid');
-
 module.exports = (sequelize, DataTypes) => {
     const ProductAttribute = sequelize.define('ProductAttributes', {
         id: {
@@ -28,11 +26,6 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'product_attribute',
         schema: 'store',
         timestamps: true,
-        hooks: {
-            beforeCreate: (product_attributes, options) => {
-                product_attributes.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     })
 
     ProductAttribute.associate = (models) => {

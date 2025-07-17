@@ -1,4 +1,4 @@
-const {ProductAttributes, ProductVariants} = require('../models/_index');
+const {ProductAttributes, ProductVariants, Products} = require('../models/_index');
 
 const _express = require('express');
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -31,11 +31,31 @@ router.post('/api/public/get-all-variant-attributes', async (req, res) => {
 
 //create new attributes for variant
 router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessToken, async (req, res) => {
-    console.log(req.body)
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
+        console.log(req.user.id)
         try {
+            const checkValid = await ProductVariants.findOne({
+                where: {
+                    id: req.params.id
+                }
+            })
+
+            if (!checkValid) {
+                return res.status(statusCode.errorHandle).json({message: 'Can not found this variant'});
+            }
+            const checkValidVendor = await Products.findOne({
+                where: {
+                    brand_id: req.user.id,
+                    id: checkValid.product_id
+                }
+            })
+
+            if (!checkValidVendor) {
+                return res.status(statusCode.errorHandle).json({message: 'Can not found this product'});
+            }
+
             const deleteAtt = await ProductAttributes.destroy({
                 where: {
                     variant_id: req.params.id
@@ -52,7 +72,7 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
                     return res.status(statusCode.errorHandle).json({message: 'Created failed'});
                 } else {
                     const updateVariant = await ProductVariants.update({
-                        has_attributes: true
+                        has_attribute: true
                     }, {
                         where: {id: req.params.id}
                     })

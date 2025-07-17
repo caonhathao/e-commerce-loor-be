@@ -9,8 +9,7 @@ const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/upload
 const upload = multer();
 const chalk = require('chalk');
 
-//Get
-//Get all sub categories from any parent-category with category_id:
+//Get all subcategories from any parent-category with category_id:
 router.get('/api/public/get-all-sub-from-category/:id', async (req, res) => {
     try {
         const result = await SubCategory.findAll({
@@ -19,8 +18,8 @@ router.get('/api/public/get-all-sub-from-category/:id', async (req, res) => {
             }
         });
         if (!result) {
-            res.status(404).json('Fetch data failed! No category found!');
-        } else res.status(200).json(result);
+            return res.status(statusCode.errorHandle).json('Fetch data failed! No category found!');
+        } else return res.status(statusCode.success).json(result);
     } catch (err) {
         console.error(err);
     }
@@ -35,15 +34,15 @@ router.get('/api/public/get-sub-category/:id', async (req, res) => {
             }
         });
         if (!result) {
-            res.status(404).json('Fetch data failed! No category found!');
-        } else res.status(200).json(result);
+            return res.status(statusCode.errorHandle).json('Fetch data failed! No category found!');
+        } else return res.status(statusCode.success).json(result);
     } catch (err) {
         console.error(err);
     }
 })
 
 //Post
-//Create new sub category
+//Create a new subcategory
 
 router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.array('image', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
@@ -66,7 +65,7 @@ router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.
                         image_link: imageUrl.toString()
                     });
                     if (!sub) {
-                        return res.status(statusCode.errorHandle).json('Creating failed!');
+                       return res.status(statusCode.errorHandle).json('Creating failed!');
                     }
                     return res.status(statusCode.success).json('Created successfully');
                 }
@@ -81,7 +80,7 @@ router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.
 //Update sub category
 router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, upload.array('images', 10), async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             const item = await SubCategory.findOne({
@@ -90,7 +89,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
                 }
             })
             if (!item) {
-                res.status(statusCode.errorHandle).json({message: 'Sub category not found'});
+                return res.status(statusCode.errorHandle).json({message: 'Sub category not found'});
             }
 
             const updateFields = {};
@@ -111,7 +110,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
                 })
 
                 if (effectRows === 0) {
-                    res.status(statusCode.errorHandle).json({message: 'Updating data failed'});
+                    return res.status(statusCode.errorHandle).json({message: 'Updating data failed'});
                 }
             }
 
@@ -119,7 +118,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
                 const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_SCAT);
 
                 if (!imageUrl) {
-                    res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
                 }
 
                 const response = await SubCategory.update(
@@ -127,14 +126,14 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
                         where: {id: req.params.id}
                     })
                 if (!response) {
-                    res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
                 }
                 return res.status(statusCode.success).json('Updated successfully');
             }
-            res.status(statusCode.success).json('Updated successfully');
+            return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 
@@ -142,7 +141,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
 //delete any sub category by id
 router.delete('/api/manager/delete-sub-category/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
             const obj = await SubCategory.findOne({
@@ -152,13 +151,13 @@ router.delete('/api/manager/delete-sub-category/:id', authenticateAccessToken, a
             })
 
             if (!obj) {
-                res.status(statusCode.errorHandle).json({message: 'Sub category not found'});
+                return res.status(statusCode.errorHandle).json({message: 'Sub category not found'});
             }
 
             const imageUrl = obj.image_link;
             const removeImage = await destroyToCloudinary(getPublicIdFromURL(imageUrl, process.env.CLOUD_ASSET_F_SC));
             if (removeImage.result !== 'ok') {
-                res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
+                return res.status(statusCode.errorHandle).json({message: 'Removing image failed!'});
             } else {
                 const result = await SubCategory.destroy({
                     where: {
@@ -166,13 +165,13 @@ router.delete('/api/manager/delete-sub-category/:id', authenticateAccessToken, a
                     }
                 })
                 if (!result) {
-                    res.status(statusCode.errorHandle).json({message: 'Deleting failed!'});
+                    return res.status(statusCode.errorHandle).json({message: 'Deleting failed!'});
                 }
-                res.status(statusCode.success).json('Deleted successfully');
+                return res.status(statusCode.success).json('Deleted successfully');
             }
         } catch (err) {
             console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
 module.exports = router;

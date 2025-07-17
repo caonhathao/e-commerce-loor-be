@@ -4,7 +4,7 @@
 
 const {createID, encryptPW} = require('../utils/functions.global');
 
-const {Users, UserRoles, TokenStore, Banned, ShippingAddress} = require('../models/_index');
+const {Users, UserRoles, TokenStore, Banned, ShippingAddress, NotifyUser} = require('../models/_index');
 
 const _express = require('express');
 const router = _express.Router();
@@ -19,6 +19,7 @@ const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTr
 const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
 const {uploadToCloudinary} = require("../controllers/uploadController");
+const {literal} = require("sequelize");
 
 //get user(s)
 router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, res) => {
@@ -51,7 +52,17 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
                     id: req.user.id
                 },
                 attributes: {
-                    exclude: ['password', 'createdAt', 'updatedAt']
+                    exclude: ['password', 'createdAt', 'updatedAt'],
+                    include: [
+                        [
+                            literal(`(
+          SELECT COUNT(*) 
+          FROM store.notify_user
+          WHERE notify_user.user_id = "Users".id AND notify_user.status = 'IDLE'
+        )`),
+                            'notify_count'
+                        ]
+                    ]
                 },
                 include: [{
                     model: ShippingAddress,
@@ -64,7 +75,11 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
             if (!user) {
                 return res.status(statusCode.errorHandle).json({message: 'No user with this id'});
             }
-            return res.status(statusCode.success).json(user);
+
+            const result = user.toJSON();
+            result.notify_count = Number(user.getDataValue('notify_count'));
+
+            return res.status(statusCode.success).json(result);
         } catch (err) {
             console.error(chalk.red(err));
             res.status(500).json({message: 'Error creating user, ', err});
@@ -190,7 +205,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
                     refreshToken = generateRefreshToken(payload, process.env.EXPIRES_IN_WEEK);
                     accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                     await TokenTracking({
-                        user_id: user.id,
+                        userID: user.id,
                         userType: 'user',
                         token: refreshToken,
                         req: req,
@@ -223,8 +238,14 @@ router.post('/api/user/logout', authenticateAccessToken, async (req, res) => {
 
             if (response === 0)
                 return res.status(statusCode.errorHandle).json({message: 'Logout failed! Please try again later'});
-            else
+            else {
+                res.clearCookie('refresh', {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'Strict',
+                });
                 return res.status(statusCode.success).json({message: 'Logout successfully'});
+            }
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

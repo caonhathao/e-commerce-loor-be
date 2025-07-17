@@ -6,13 +6,18 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
         },
         image_link: {
-            type:DataTypes.STRING,
+            type: DataTypes.STRING,
             allowNull: true,
         },
         name: {
             type: DataTypes.STRING,
             allowNull: true,
             unique: true,
+        },
+        description: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            defaultValue: 'none',
         },
         password: {
             type: DataTypes.STRING,

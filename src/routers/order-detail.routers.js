@@ -1,6 +1,6 @@
 const _express = require('express');
 const router = _express.Router();
-const {OrderDetail, Orders,ProductVariants} = require('../models/_index');
+const {OrderDetail, Orders, ProductVariants} = require('../models/_index');
 const statusCode = require("../utils/statusCode");
 const multer = require("multer");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -19,15 +19,15 @@ router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req
                     {
                         model: OrderDetail,
                         as: 'OrderDetail',
-                        attributes: {exclude: ['id', 'order_id', 'updatedAt']},
-                        include:[{
+                        attributes: {exclude: ['id', 'order_id', 'createdAt', 'updatedAt']},
+                        include: [{
                             model: ProductVariants,
-                            as:'product_variants',
-                            attributes: ['name','sku','price']
+                            as: 'product_variants',
+                            attributes: ['name', 'sku', 'price']
                         }]
                     },
                 ],
-                attributes: ['user_id', 'cost', 'fee','createdAt','status'],
+                attributes: {exclude: [ 'createdAt', 'updatedAt']},
                 where: {
                     id: req.params.id
                 }
