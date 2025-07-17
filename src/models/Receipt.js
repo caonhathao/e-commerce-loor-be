@@ -1,6 +1,6 @@
 const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
-    const BillPayment = sequelize.define('BillPayment', {
+    const Receipt = sequelize.define('Receipt', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
         }
     }, {
-        tableName: 'bill_payment',
+        tableName: 'receipt',
         timestamps: true,
         schema: 'store',
         hooks: {
@@ -47,16 +47,16 @@ module.exports = (sequelize, DataTypes) => {
         }
     });
 
-    BillPayment.associate = (models) => {
-        BillPayment.belongsTo(models.Users, {
+    Receipt.associate = (models) => {
+        Receipt.belongsTo(models.Users, {
             foreignKey: 'id',
             as: 'users',
         })
-        BillPayment.belongsTo(models.Orders, {
+        Receipt.belongsTo(models.Orders, {
             foreignKey: 'id',
             as: 'orders',
         })
     }
 
-    return BillPayment;
+    return Receipt;
 }
