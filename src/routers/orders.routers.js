@@ -285,6 +285,14 @@ router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, re
                 type: "ORDER",
                 status: "IDLE",
             })
+
+            await Receipt.update({
+                payment_status: 'CANCELED'
+            }, {
+                where: {
+                    order_id: req.params.id
+                }
+            })
             return res.status(statusCode.success).json({message: 'Deleted successfully'});
         } catch
             (err) {

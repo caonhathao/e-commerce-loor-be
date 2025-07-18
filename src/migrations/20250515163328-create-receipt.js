@@ -32,7 +32,7 @@ module.exports = {
                 defaultValue: 'COD',
             },
             payment_status: {
-                type: Sequelize.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED'),
+                type: Sequelize.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED','CANCELED'),
                 allowNull: false,
                 defaultValue: 'PENDING',
             },

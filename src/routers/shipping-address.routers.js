@@ -59,7 +59,6 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                 );
             }
 
-
             const newAddress = await ShippingAddress.create({
                 id: createID('SHIP-ADDRESS'),
                 user_id: req.user.id,
