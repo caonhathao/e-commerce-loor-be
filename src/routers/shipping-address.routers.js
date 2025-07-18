@@ -36,6 +36,7 @@ router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res
 
 //add or change address
 router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.none(), async (req, res) => {
+    console.log(req.body)
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else {
@@ -46,30 +47,41 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                 },
             })
 
+            console.log(wardExist)
             const cityExist = await Provinces.findOne({
                 where: {
                     id: req.body.city,
                 },
             })
 
+            console.log(cityExist)
+            let update
             if (req.body.is_default) {
-                await ShippingAddress.update(
-                    { is_default: false },
-                    { where: { is_default: true } }
+                update = await ShippingAddress.update(
+                    {is_default: false},
+                    {
+                        where: {
+                            is_default: true,
+                            user_id: req.user.id
+                        }
+                    }
                 );
             }
+            if (update === 0) return res.status(statusCode.errorHandle).json({message: 'Can not update default address'});
+            else {
+                console.log('update: ', update)
+                const newAddress = await ShippingAddress.create({
+                    id: createID('SHIP-ADDRESS'),
+                    user_id: req.user.id,
+                    address: req.body.address,
+                    ward: wardExist.name,
+                    city: cityExist.name,
+                    is_default: req.body.is_default,
+                })
 
-            const newAddress = await ShippingAddress.create({
-                id: createID('SHIP-ADDRESS'),
-                user_id: req.user.id,
-                address: req.body.address,
-                ward: wardExist.name,
-                city: cityExist.name,
-                is_default: req.body.is_default,
-            })
-
-            if (!newAddress) return res.status(statusCode.errorHandle).json({message: 'Add address failed! Please try again later'});
-            return res.status(statusCode.success).json('Added address successfully');
+                if (!newAddress) return res.status(statusCode.errorHandle).json({message: 'Add address failed! Please try again later'});
+                return res.status(statusCode.success).json('Added address successfully');
+            }
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
