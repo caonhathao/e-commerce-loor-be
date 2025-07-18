@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'COD',
         },
         payment_status: {
-            type: DataTypes.ENUM('UNPAID', 'PAID', 'PENDING', 'CANCEL'),
+            type: DataTypes.ENUM('UNPAID', 'PAID', 'PENDING', 'REFUNDED','CANCELED'),
             allowNull: false,
             defaultValue: 'PENDING',
         },

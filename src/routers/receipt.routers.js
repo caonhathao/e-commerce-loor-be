@@ -16,7 +16,7 @@ router.get('/api/user/get-receipt-from-order/:id', authenticateAccessToken, asyn
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else try {
-        const result = await Receipt.findAll({
+        const result = await Receipt.findOne({
             where: {
                 user_id: req.user.id,
             },

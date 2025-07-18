@@ -27,7 +27,7 @@ router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req
                         }]
                     },
                 ],
-                attributes: {exclude: [ 'createdAt', 'updatedAt']},
+                attributes: {exclude: [ 'updatedAt']},
                 where: {
                     id: req.params.id
                 }
