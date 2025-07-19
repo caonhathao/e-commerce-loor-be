@@ -54,15 +54,18 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
             const limit = parseInt(req.query.limit) || 20
             const offset = (page - 1) * limit
 
-            const {count, rows} = await NotifyUser.findAll({
+            const {count, rows} = await NotifyUser.findAndCountAll({
                 limit,
                 offset,
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['id', 'user_id', 'updatedAt']},
+                attributes: {exclude: ['id', 'user_id', 'content', 'updatedAt']},
             })
-            if (!rows || rows.length === 0) {
+
+            console.log(req.user.id)
+
+            if (!rows || count === 0) {
                 return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
             }
             return res.status(statusCode.success).json({
@@ -95,6 +98,7 @@ router.post('/api/vendor/accept-order', authenticateAccessToken, async (req, res
             const newNoticeUser = await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: req.body.user_id,
+                title:'Đơn hàng được chấp nhận',
                 content: 'Đơn hàng của bạn đã được xác nhận bởi nhà bán hàng.',
                 redirect_url: `/order-detail/${req.body.order_id}`,
                 type: "SUCCESS",

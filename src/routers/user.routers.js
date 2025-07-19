@@ -2,7 +2,7 @@
 * These are all api to get and handle with user's data
 */
 
-const {createID, encryptPW} = require('../utils/functions.global');
+const {createID, encryptPW, getPublicIdFromURL} = require('../utils/functions.global');
 
 const {Users, UserRoles, TokenStore, Banned, ShippingAddress, NotifyUser} = require('../models/_index');
 
@@ -18,7 +18,7 @@ const {sendAuthResponse} = require("../utils/authUtils");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
-const {uploadToCloudinary} = require("../controllers/uploadController");
+const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
 const {literal} = require("sequelize");
 
 //get user(s)
@@ -313,6 +313,16 @@ router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
         try {
+            const userData = await Users.findOne({
+                where: {
+                    id: req.user.id
+                }
+            })
+
+            if (!userData) {
+                return res.status(statusCode.errorHandle).json({message: 'No user found with this id'});
+            }
+
             const updateFields = {};
 
             if (req.body.full_name && req.body.full_name !== '') {
@@ -344,6 +354,10 @@ router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('
             }
 
             if (req.files && req.files.length > 0) {
+                if (userData.image_link) {
+                    console.log(chalk.green(userData.image_link))
+                    await destroyToCloudinary(getPublicIdFromURL(userData.image_link, process.env.CLOUD_ASSET_F_USER));
+                }
                 const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_USER);
 
                 if (!imageUrl) {

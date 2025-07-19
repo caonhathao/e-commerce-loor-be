@@ -13,6 +13,10 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id'
             }
         },
+        title:{
+            type:DataTypes.STRING,
+            allowNull:false,
+        },
         content: {
             type: DataTypes.STRING,
             allowNull: false,

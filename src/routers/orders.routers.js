@@ -112,7 +112,8 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: req.user.id,
-                content: "Bạn có đơn đặt hàng mới",
+                title: 'Bạn vừa đặt hàng thành công',
+                content: "Đơn hàng của bạn đang chờ nhà bán hàng phê duyệt",
                 redirect_url: `/order-detail/${id}`,
                 type: "NOTICE",
                 status: "IDLE",
@@ -121,6 +122,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             await NotifyBrand.create({
                 id: createID('NOT-BRA'),
                 brand_id: item.brand_id,
+                title: 'Bạn dó đơn hàng mới',
                 content: "Bạn có đơn đặt hàng mới",
                 redirect_url: `/order-detail/${id}`,
                 type: "ORDER",
@@ -280,7 +282,8 @@ router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, re
             await NotifyBrand.create({
                 id: createID('NOT-BRA'),
                 brand_id: result.brand_id,
-                content: "Đơn hàng bị huy",
+                title: 'Đơn hàng bị hủy',
+                content: `Đơn hàng có mã ${req.params.id} bị huy`,
                 redirect_url: `/order-detail/${req.params.id}`,
                 type: "ORDER",
                 status: "IDLE",
