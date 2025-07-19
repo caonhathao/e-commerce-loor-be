@@ -41,20 +41,21 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else {
         try {
-            const wardExist = await Districts.findOne({
-                where: {
-                    province_id: req.body.city,
-                },
-            })
-
-            console.log(wardExist)
             const cityExist = await Provinces.findOne({
                 where: {
                     id: req.body.city,
                 },
             })
-
             console.log(cityExist)
+
+            const wardExist = await Districts.findOne({
+                where: {
+                    province_id: req.body.city,
+                    id: req.body.ward,
+                },
+            })
+            console.log(wardExist)
+
             let update
             if (req.body.is_default) {
                 update = await ShippingAddress.update(
