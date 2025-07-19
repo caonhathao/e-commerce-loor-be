@@ -1,4 +1,5 @@
 const cloudinary = require('../config/cloudinary');
+const chalk = require('chalk');
 
 const   uploadToCloudinary = async (fileBuffer, assetName) => {
     try {
@@ -31,7 +32,6 @@ const   uploadToCloudinary = async (fileBuffer, assetName) => {
 };
 
 const destroyToCloudinary = async (publicId) => {
-    // console.log('id: ',publicId);
     try {
         return await cloudinary.uploader.destroy(publicId, {resource_type: "image"});
     } catch (err) {

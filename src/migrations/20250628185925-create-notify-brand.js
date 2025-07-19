@@ -17,6 +17,10 @@ module.exports = {
                     key: 'id'
                 }
             },
+            title: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             content: {
                 type: Sequelize.STRING,
                 allowNull: false,
@@ -29,10 +33,10 @@ module.exports = {
                 defaultValue: 'NOTICE',
                 allowNull: false
             },
-            status:{
-                type:Sequelize.ENUM("READ","IDLE"),
-                defaultValue:"IDLE",
-                allowNull:false,
+            status: {
+                type: Sequelize.ENUM("READ", "IDLE"),
+                defaultValue: "IDLE",
+                allowNull: false,
             },
             createdAt: {
                 type: Sequelize.DATE,
