@@ -103,6 +103,19 @@ router.put('/api/user/update-shipping-address', authenticateAccessToken, upload.
             if (req.body.is_default && req.body.is_default !== '') {
                 objectValues.is_default = req.body.is_default;
             }
+
+            if (req.body.is_default) {
+                await ShippingAddress.update(
+                    {is_default: false},
+                    {
+                        where: {
+                            is_default: true,
+                            user_id: req.user.id
+                        }
+                    }
+                );
+            }
+
             if (Object.keys(objectValues).length > 0) {
                 const [result] = await ShippingAddress.update(objectValues, {
                     where: {id: req.body.id}
