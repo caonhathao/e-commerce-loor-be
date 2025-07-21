@@ -60,13 +60,13 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
                 where: {
                     user_id: req.user.id,
                 },
-                attributes: {exclude: ['id', 'user_id', 'content', 'updatedAt']},
+                attributes: {exclude: ['user_id', 'content', 'updatedAt']},
             })
 
             console.log(req.user.id)
 
             if (!rows || count === 0) {
-                return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
+                return res.status(statusCode.empty).json({message: 'Không có dữ liệu'});
             }
             return res.status(statusCode.success).json({
                 current_page: page,
@@ -77,6 +77,100 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
             });
         } catch (err) {
             console.error(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
+//get notify's detail
+router.get('/api/user/get-notify-detail', authenticateAccessToken, async (req, res) => {
+    console.log(req.query.id)
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else {
+        try {
+            const result = await NotifyUser.findOne({
+                where: {
+                    id: req.query.id,
+                    user_id: req.user.id,
+                },
+                attributes: {exclude: ['id', 'user_id', 'status', 'updatedAt']},
+            })
+            if (!result) return res.status(statusCode.errorHandle).json({message: 'Can not find this notice'});
+
+            await NotifyUser.update({
+                status: 'READ',
+            }, {
+                where: {
+                    id: req.query.id,
+                    user_id: req.user.id,
+                }
+            })
+
+            return res.status(statusCode.success).json(result);
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+    }
+})
+
+//get all notifications by status
+router.post('/api/user/get-all-notify-by-type', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            if (req.user.role === 'ROLE_USER') {
+                const {count, rows} = await NotifyUser.findAndCountAll({
+                    limit,
+                    offset,
+                    where: {
+                        user_id: req.user.id,
+                        type: {
+                            [Op.in]: req.body.type
+                        }
+                    }
+                })
+
+                if (rows && count > 0) {
+                    return res.status(statusCode.success).json({
+                        current_page: page,
+                        total_items: count,
+                        current_items: rows.length,
+                        total_pages: Math.ceil(count / limit),
+                        data: rows,
+                    });
+                } else return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
+            }
+            if (req.user.role === 'ROLE_VENDOR') {
+                const {count, rows} = await NotifyBrand.findAndCountAll({
+                    limit,
+                    offset,
+                    where: {
+                        brand_id: req.user.id,
+                        type: {
+                            [Op.in]: req.body.type
+                        }
+                    }
+                })
+
+                if (rows && count > 0) {
+                    return res.status(statusCode.success).json({
+                        current_page: page,
+                        total_items: count,
+                        current_items: rows.length,
+                        total_pages: Math.ceil(count / limit),
+                        data: rows,
+                    });
+                } else return res.status(statusCode.errorHandle).json({message: 'No notify me found with this brand\'s id'});
+            }
+
+        } catch (e) {
+            console.log(chalk.red(e))
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
 })
@@ -98,7 +192,7 @@ router.post('/api/vendor/accept-order', authenticateAccessToken, async (req, res
             const newNoticeUser = await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: req.body.user_id,
-                title:'Đơn hàng được chấp nhận',
+                title: 'Đơn hàng được chấp nhận',
                 content: 'Đơn hàng của bạn đã được xác nhận bởi nhà bán hàng.',
                 redirect_url: `/order-detail/${req.body.order_id}`,
                 type: "SUCCESS",
@@ -164,7 +258,7 @@ router.get('/api/user/open-notification', authenticateAccessToken, async (req, r
 
 //when a user and vendor want to delete their notifications,
 // the user/vendor deletes one
-router.delete('/api/user/delete-notification/:id', authenticateAccessToken, async (req, res) => {
+router.delete('/api/user/delete-notification', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_BRAND') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
@@ -173,7 +267,7 @@ router.delete('/api/user/delete-notification/:id', authenticateAccessToken, asyn
             if (req.user.role === 'ROLE_USER') {
                 result = await NotifyUser.destroy({
                     where: {
-                        id: req.params.id,
+                        id: req.body,
                         user_id: req.user.id,
                     }
                 })
@@ -199,9 +293,8 @@ router.delete('/api/user/delete-notifications', authenticateAccessToken, async (
     if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     }
-
-    const {ids} = req.body; //['id1','id2','...']
-
+    const ids = req.body; //['id1','id2','...']
+    console.log(ids)
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(statusCode.missingModule).json({message: 'No notification IDs provided'});
     }
@@ -228,8 +321,8 @@ router.delete('/api/user/delete-notifications', authenticateAccessToken, async (
                 }
             });
         }
-        if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Xóa thất bại'})
-        return res.status(200).json({message: 'Deleted successfully', count: result});
+        if (result === 0) return res.status(statusCode.empty).json({message: 'Không có dữ liệu'});
+        return res.status(statusCode.success).json({message: 'Deleted successfully'});
     } catch (err) {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
