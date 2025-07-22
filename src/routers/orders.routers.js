@@ -155,9 +155,6 @@ router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res)
                 },
                 attributes: {exclude: ['user_id', 'shipping_type', 'brand_id', 'updatedAt']},
             })
-            if (!rows || rows.length === 0) {
-                return res.status(statusCode.errorHandle).json({message: 'No order found with this user\'s id'});
-            }
             return res.status(statusCode.success).json({
                 current_page: page,
                 total_items: count,
@@ -176,15 +173,43 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Orders.findAll({
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
                 where: {
                     brand_id: req.user.id,
                 },
                 attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
             })
-            if (!result) {
-                return res.status(statusCode.errorHandle).json({message: 'No order found with this user\'s id'});
-            }
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        } catch (err) {
+            console.error(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
+router.get('/api/user/get-all-orders-by-status', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR' && req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            const result = await Orders.findAll({
+                where: {
+                    brand_id: req.user.id,
+                    status: req.query.status,
+                },
+                attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
+            })
             return res.status(statusCode.success).json(result);
         } catch (err) {
             console.error(chalk.red(err));
@@ -192,46 +217,37 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
         }
 })
 
-router.post('/api/vendor/get-all-orders-by-status', authenticateAccessToken, async (req, res) => {
+router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else
+    } else {
         try {
-            let ans;
-            if (req.body.status === 'PENDING' || req.body.status === 'COMPLETE' || req.body.status === 'CANCELED' || req.body.status === 'CONFIRMED' || req.body.status === 'DELIVERING') {
-                ans = await Orders.findAll({
-                    where: {
-                        brand_id: req.user.id,
-                        status: req.body.status,
-                    },
-                    attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-                })
-            } else if (req.body.status === 'OTHER') {
-                ans = await Orders.findAll({
-                    where: {
-                        brand_id: req.user.id,
-                        status: {
-                            [Op.notIn]: ['PENDING', 'COMPLETE', 'CANCELED', 'CONFIRMED', 'DELIVERING']
-                        },
-                    },
-                    attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-                })
-            } else {
-                ans = await Orders.findAll({
-                    where: {
-                        brand_id: req.user.id,
-                    },
-                    attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-                })
-            }
-            if (!ans || ans === 0) {
-                return res.status(statusCode.errorHandle).json({message: 'No order found with this status'});
-            } else return res.status(statusCode.success).json(ans);
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
 
-        } catch (err) {
-            console.error(chalk.red(err));
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
+                where: {
+                    id: {
+                        [Op.like]: `%${req.query.id}%`
+                    }
+                },
+                attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
+            })
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        } catch (e) {
+            console.log(chalk.red(e));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
         }
+    }
 })
 
 //put: update status order

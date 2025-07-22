@@ -10,37 +10,39 @@ const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/upload
 const upload = multer();
 const statusCode = require("../utils/statusCode");
 const chalk = require("chalk");
+const {errorHandle} = require("../utils/statusCode");
 
-//get all product's variants by vendor
-router.get('/api/public/get-all-variants/:id', async (req, res) => {
+//a user gets a variant list from any product
+router.get('/api/public/get-all-variants', async (req, res) => {
     try {
         delete ProductVariants.rawAttributes.variant_id;
         delete ProductVariants.tableAttributes.variant_id;
         ProductVariants.refreshAttributes();
+
         const allVariants = await ProductVariants.findAll(
             {
-                where: {product_id: req.params.id},
+                where: {product_id: req.query.id},
                 attributes: {exclude: ['product_id', 'createdAt', 'updatedAt']},
             }
         );
 
         if (!allVariants) {
-            res.status(404).json({message: 'No variant found with this id'});
-        } else res.status(202).json(allVariants);
-
-    } catch
-        (e) {
-        console.error(e);
-        res.status(500).json({message: 'Internal server error'});
+            return res.status(statusCode.errorHandle).json({message: 'No variants found with this id'});
+        }
+        return res.status(statusCode.success).json(allVariants);
+    } catch (e) {
+        console.log(chalk.red(e));
+        return res.status(statusCode.serverError).json({message: 'Internal server error'});
     }
 })
 
-//get any variant's information
+//user gets any variant's information
 router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
     try {
         delete ProductVariants.rawAttributes.variant_id;
         delete ProductVariants.tableAttributes.variant_id;
         ProductVariants.refreshAttributes();
+
         const variant = await ProductVariants.findOne(
             {
                 where: {id: req.params.id}
@@ -48,15 +50,43 @@ router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
         )
 
         if (!variant) {
-            res.status(404).json({message: 'No variant found with this id'});
-        } else res.status(200).json(variant);
+            return res.status(statusCode.errorHandle).json({message: 'No variant found with this id'});
+        } else
+            return res.status(statusCode.success).json(variant);
     } catch (e) {
-        console.error(e);
-        res.status(500).json({message: 'Internal server error'});
+        console.log(chalk.red(e));
+        return res.status(statusCode.serverError).json({message: 'Internal server error'});
     }
 })
 
-//create new variants by vendor
+//a vendor gets a variant list from any product
+router.get('/api/vendor/get-all-variants', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+    } else {
+        try {
+            console.log(req.query)
+            const result = await ProductVariants.findAll({
+                where: {
+                    product_id: req.query.id,
+                },
+                attributes: ['id', 'sku', 'name','has_attribute']
+            })
+
+            return res.status(statusCode.success).json(result);
+        } catch (e) {
+            console.log(chalk.red(e));
+            return res.status(statusCode.serverError).json({message: 'Internal server error'});
+        }
+    }
+})
+
+//vendor get variant's information
+router.get('/api/vendor/get-variant-by-id/:id', async (req, res) => {
+
+})
+
+//vendor creates new variants
 router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
@@ -109,7 +139,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
     }
 })
 
-//update variant's information
+//vendor update variant's information
 router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     console.log(req.body)
     if (req.user.role !== 'ROLE_VENDOR') {
@@ -152,6 +182,8 @@ router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, up
         }
     }
 })
+
+//vendor delete variant
 router.delete('/api/vendor/delete-variant-with-id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
@@ -174,4 +206,5 @@ router.delete('/api/vendor/delete-variant-with-id', authenticateAccessToken, upl
         }
     }
 })
+
 module.exports = router;
