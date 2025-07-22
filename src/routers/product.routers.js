@@ -52,28 +52,32 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
         const limit = parseInt(req.query.limit) || 20
         const offset = (page - 1) * limit
 
-        const {count, rows} = await Products.findAndCountAll(
-            {
-                limit,
-                offset,
-                where: {brand_id: req.params.id},
-                include: [{
-                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
-                }],
-                attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
-            }
-        );
-        if (!rows || rows.length === 0) {
-            return res.status(statusCode.errorHandle).json({message: 'No product found'});
-        } else {
-            return res.status(statusCode.success).json({
-                current_page: page,
-                total_items: count,
-                current_items: rows.length,
-                total_pages: Math.ceil(count / limit),
-                data: rows,
-            });
-        }
+        const count = await Products.count({
+            where: {brand_id: req.params.id},
+        });
+
+        const rows = await Products.findAll({
+            limit,
+            offset,
+            where: {brand_id: req.params.id},
+            include: [{
+                model: ImageProduct,
+                as: "image_products",
+                required: false,
+                attributes: {exclude: ['product_id']}
+            }],
+            attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
+            order: [['status', 'ASC']]
+        });
+        console.log(count, rows.length);
+        return res.status(statusCode.success).json({
+            current_page: page,
+            total_items: count,
+            current_items: rows.length,
+            total_pages: Math.ceil(count / limit),
+            data: rows,
+        });
+
     } catch (err) {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -163,30 +167,6 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
     }
 })
 
-//get product's info by vendor (brand)
-router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
-    } else
-        try {
-            const result = await Products.findOne({
-                where: {id: req.params.id},
-                include: [{
-                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
-                }]
-            })
-
-            if (result === 0) {
-                return res.status(statusCode.errorHandle).json({message: 'No product found'});
-            } else {
-                return res.status(statusCode.success).json(result);
-            }
-        } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
-        }
-})
-
 //get products by price in range
 router.get('/api/public/get-product-by-price', async (req, res) => {
     try {
@@ -237,6 +217,63 @@ router.get('/api/public/get-product-by-key/:key', async (req, res) => {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
+})
+
+//get all products by vendor (brand)
+router.get('/api/vendor/get-all-products', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+    } else
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Products.findAndCountAll({
+                limit,
+                offset,
+                where: {brand_id: req.user.id},
+                attributes: ['id', 'name', 'status'],
+            })
+
+            console.log(count, rows.length);
+
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            })
+
+        } catch (e) {
+            console.log(chalk.red(e));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
+//get product's info by vendor (brand)
+router.get('/api/vendor/get-product-by-id/:id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+    } else
+        try {
+            const result = await Products.findOne({
+                where: {id: req.params.id},
+                include: [{
+                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                }]
+            })
+
+            if (result === 0) {
+                return res.status(statusCode.errorHandle).json({message: 'No product found'});
+            } else {
+                return res.status(statusCode.success).json(result);
+            }
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
 })
 
 //post: create a new product
@@ -442,20 +479,18 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
 //delete: delete product permanent
 router.delete('/api/vendor/delete-product', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+        return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else
         try {
             const result = await Products.destroy({
                 where: {id: req.body.id}
             })
             if (!result) {
-                res.status(statusCode.errorHandle).json({message: 'No product found with this id'});
+                return res.status(statusCode.errorHandle).json({message: 'No product found with this id'});
             }
 
             //running websocket event when delete successfully
-            const io = getIO();
-            io.emit('delete-product', {id: req.body.id});
-            res.status(statusCode.success).json({message: 'Product deleted!'});
+            return res.status(statusCode.success).json({message: 'Product deleted!'});
         } catch (err) {
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

@@ -294,7 +294,6 @@ router.delete('/api/user/delete-notifications', authenticateAccessToken, async (
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     }
     const ids = req.body; //['id1','id2','...']
-    console.log(ids)
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(statusCode.missingModule).json({message: 'No notification IDs provided'});
     }
