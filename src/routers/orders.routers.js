@@ -29,8 +29,6 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
         let counting = 0;
         const io = getIO();
 
-        console.log(req.body)
-
         for (const item of req.body.list) {
             counting++;
             const id = createID('ORD');
@@ -222,6 +220,7 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
         try {
+            console.log(req.query.keyword)
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20
             const offset = (page - 1) * limit
@@ -231,7 +230,7 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
                 offset,
                 where: {
                     id: {
-                        [Op.like]: `%${req.query.id}%`
+                        [Op.like]: `%${req.query.keyword}%`
                     }
                 },
                 attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
@@ -256,7 +255,19 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            console.log(req.body)
+            const io = getIO();
+
+            const check = await Orders.findOne({
+                where: {
+                    id: req.body.id,
+                    brand_id: req.user.id,
+                }
+            })
+
+            if (!check) {
+                return res.status(statusCode.errorHandle).json({message: 'Đơn hàng không tồn tại!'});
+            }
+
             const result = await Orders.update({
                     status: req.body.status,
                 }, {
@@ -264,8 +275,25 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
                 }
             )
             if (result === 0 || !result) {
-                return res.status(statusCode.errorHandle).json({message: 'No order found with this id'});
-            } else return res.status(statusCode.success).json({message: 'Updated successfully'});
+                return res.status(statusCode.errorHandle).json({message: 'Cập nhật thất bại'});
+            }
+
+            const newNotify = await NotifyUser.create({
+                id: createID('NOT-USE'),
+                user_id: check.user_id,
+                title: `Đơn hàng ${req.body.id} được xác nhận!`,
+                content: `Đơn hàng ${req.body.id} của bạn đã được xác nhận bởi nhà bán hàng!`,
+                redirect_url: `/order-detail/${req.body.id}`,
+                type: "NOTICE",
+                status: "IDLE",
+            })
+
+            io.to(`room_${req.user.id}`).emit('creating_new_order', {
+                message: `/order-detail/${req.body.id}`,
+            })
+
+            return res.status(statusCode.success).json({message: 'Updated successfully'});
+
         } catch (err) {
             console.error(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
