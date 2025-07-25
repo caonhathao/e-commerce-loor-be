@@ -173,23 +173,45 @@ router.post('/api/system/authentication/:id', authenticateAccessToken, async (re
     }
 })
 
-//get: get all info or one
-//get one:
+//when a user gets brand's information
 router.get('/api/public/get-brand-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER' && req.user.role !== 'ROLE_VENDOR') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.errorHandle).json({message: 'Access token is invalid'});
     } else
         try {
-            const brand = await Brands.findOne({where: {id: req.params.id}, attributes: {exclude: ['password']},});
+            const brand = await Brands.findOne({
+                where: {id: req.params.id},
+                attributes: {exclude: ['password', 'is_locked', 'updatedAt']},
+            });
             if (!brand) {
-                res.status(404).json({message: 'No brand with this id: ' + req.params.id});
+                return res.status(statusCode.empty).json({message: 'No brand with this id: ' + req.params.id});
             } else {
-                res.status(200).json(brand);
+                return res.status(statusCode.success).json(brand);
             }
         } catch (err) {
-            res.status(500).json({
-                message: 'Error retrieving user, ', error: err.message
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Server error! Please try again later!'});
+        }
+});
+
+//when a brand gets its information
+router.get('/api/brand/get-profile', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.errorHandle).json({message: 'Access token is invalid'});
+    } else
+        try {
+            const brand = await Brands.findOne({
+                where: {id: req.user.id},
+                attributes: {exclude: ['id', 'password', 'updatedAt']},
             });
+            if (!brand) {
+                return res.status(statusCode.empty).json({message: 'No brand with this id: ' + req.params.id});
+            } else {
+                return res.status(statusCode.success).json(brand);
+            }
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Server error! Please try again later!'});
         }
 });
 
@@ -249,8 +271,8 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
             if (req.body.email && req.body.email !== '') {
                 updateFields.email = req.body.email;
             }
-            if (req.body.address && req.body.address !== '') {
-                updateFields.address = req.body.address;
+            if (req.body.description && req.body.description !== '') {
+                updateFields.description = req.body.description;
             }
 
             if (Object.keys(updateFields).length > 0) {
@@ -258,7 +280,7 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
                     updateFields,
                     {where: {id: req.user.id}}
                 );
-                if (result===0) {
+                if (result === 0) {
                     return res.status(statusCode.errorHandle).json({message: 'Update error! Please check your information again!'});
                 }
             }
