@@ -9,7 +9,7 @@ const {
     Receipt,
     Brands
 } = require('../models/_index');
-const {createID} = require("../utils/functions.global");
+const {createID, formatTemplate} = require("../utils/functions.global");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
 const multer = require("multer");
@@ -17,8 +17,9 @@ const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {Sequelize, Op} = require("sequelize");
 const {getIO} = require("../services/websocket");
-const {sendAuthResponse} = require("../utils/authUtils");
+const {sendAuthResponse} = require("../utils/auth.utils");
 const chalk = require("chalk");
+const {systemNotify} = require('../utils/system-notify.utils')
 
 //post: create new order
 router.post('/api/user/create-new-order', authenticateAccessToken, async (req, res) => {
@@ -126,6 +127,11 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 type: "ORDER",
                 status: "IDLE",
             })
+
+            io.to(`room_${item.brand_id}`).emit('new_order', {
+                message: `Bạn có đơn dặt hàng mới`,
+            });
+
         }
         return res.status(statusCode.success).json({message: 'Created successfully'});
 
@@ -201,14 +207,26 @@ router.get('/api/user/get-all-orders-by-status', authenticateAccessToken, async 
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Orders.findAll({
-                where: {
-                    brand_id: req.user.id,
-                    status: req.query.status,
-                },
-                attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-            })
-            return res.status(statusCode.success).json(result);
+            let result;
+            if (req.user.role === 'ROLE_USER') {
+                result = await Orders.findAll({
+                    where: {
+                        user_id: req.user.id,
+                        status: req.query.status,
+                    },
+                    attributes: {exclude: ['updatedAt', 'fee', 'brand_id', 'user_id']},
+                })
+                return res.status(statusCode.success).json(result);
+            } else if (req.user.role === 'ROLE_VENDOR') {
+                result = await Orders.findAll({
+                    where: {
+                        brand_id: req.user.id,
+                        status: req.query.status,
+                    },
+                    attributes: {exclude: ['updatedAt', 'fee', 'brand_id', 'user_id']},
+                })
+                return res.status(statusCode.success).json(result);
+            }
         } catch (err) {
             console.error(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -281,10 +299,10 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
             const newNotify = await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: check.user_id,
-                title: `Đơn hàng ${req.body.id} được xác nhận!`,
-                content: `Đơn hàng ${req.body.id} của bạn đã được xác nhận bởi nhà bán hàng!`,
+                title: systemNotify[req.body.status].user_content.title,
+                content: formatTemplate(systemNotify[req.body.status].user_content.content, {id: req.body.id}),
                 redirect_url: `/order-detail/${req.body.id}`,
-                type: "NOTICE",
+                type: systemNotify[req.body.status].type,
                 status: "IDLE",
             })
 
