@@ -7,9 +7,10 @@ const {generateAccessToken, generateRefreshToken} = require('../security/JWTProv
 const {verify, sign} = require("jsonwebtoken");
 const {TokenUpdate} = require("../security/TokenTracking");
 require("ms");
-const {sendAuthResponse} = require("../utils/authUtils");
+const {sendAuthResponse} = require("../utils/auth.utils");
 const chalk = require("chalk");
 const statusCode = require("../utils/statusCode");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 
 const {REFRESH_SECRET_KEY} = process.env;
 router.post('/api/auth/refresh', async (req, res) => {
@@ -50,9 +51,51 @@ router.post('/api/auth/refresh', async (req, res) => {
 
         sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
-        console.log(chalk.red('53',err));
+        console.log(chalk.red('53', err));
         return res.status(statusCode.errorHandle).json({message: 'Invalid or expired refresh token'});
     }
 
 })
+
+//post: user logout
+router.post('/api/me/logout', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER' && req.user === 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
+    } else
+        try {
+            let response;
+            if (req.user.role === 'ROLE_USER') {
+                response = await TokenStore.destroy({
+                    where: {
+                        user_id: req.user.id,
+                        user_type: 'user',
+                        IP: req.ip || req.connection.remoteAddress,
+                    }
+                })
+            } else if (req.user.role === 'ROLE_VENDOR') {
+                response = await TokenStore.destroy({
+                    where: {
+                        user_id: req.user.id,
+                        user_type: 'brand',
+                        IP: req.ip || req.connection.remoteAddress,
+                    }
+                })
+            }
+
+            if (response === 0)
+                return res.status(statusCode.errorHandle).json({message: 'Logout failed! Please try again later'});
+            else {
+                res.clearCookie('refresh', {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'Strict',
+                });
+                return res.status(statusCode.success).json({message: 'Logout successfully'});
+            }
+        } catch (err) {
+            console.log(chalk.red(err));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
 module.exports = router;

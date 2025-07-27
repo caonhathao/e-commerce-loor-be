@@ -51,7 +51,7 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
     } else
         try {
             const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20
+            const limit = parseInt(req.query.limit) || 10
             const offset = (page - 1) * limit
 
             const {count, rows} = await NotifyUser.findAndCountAll({
@@ -62,8 +62,6 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
                 },
                 attributes: {exclude: ['user_id', 'content', 'updatedAt']},
             })
-
-            console.log(req.user.id)
 
             if (!rows || count === 0) {
                 return res.status(statusCode.empty).json({message: 'Không có dữ liệu'});
@@ -144,7 +142,7 @@ router.post('/api/user/get-all-notify-by-type', authenticateAccessToken, async (
                         total_pages: Math.ceil(count / limit),
                         data: rows,
                     });
-                } else return res.status(statusCode.errorHandle).json({message: 'No notify me found with this user\'s id'});
+                } else return res.status(statusCode.empty).json({message: 'Không có thông báo nào!'});
             }
             if (req.user.role === 'ROLE_VENDOR') {
                 const {count, rows} = await NotifyBrand.findAndCountAll({

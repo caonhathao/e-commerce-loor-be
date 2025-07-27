@@ -13,8 +13,8 @@ const multer = require('multer');
 const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
-const authUtils = require('../utils/authUtils')
-const {sendAuthResponse} = require("../utils/authUtils");
+const authUtils = require('../utils/auth.utils')
+const {sendAuthResponse} = require("../utils/auth.utils");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
 const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
@@ -219,37 +219,6 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
     }
-})
-
-//post: user logout
-router.post('/api/user/logout', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
-        return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
-    } else
-        try {
-            const response = await TokenStore.destroy({
-                where: {
-                    user_id: req.user.id,
-                    user_type: 'user',
-                    IP: req.ip || req.connection.remoteAddress,
-                }
-            })
-
-
-            if (response === 0)
-                return res.status(statusCode.errorHandle).json({message: 'Logout failed! Please try again later'});
-            else {
-                res.clearCookie('refresh', {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'Strict',
-                });
-                return res.status(statusCode.success).json({message: 'Logout successfully'});
-            }
-        } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
-        }
 })
 
 //lock account by system

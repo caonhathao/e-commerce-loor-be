@@ -11,7 +11,6 @@ const upload = multer();
 const _express = require('express');
 const router = _express.Router();
 
-
 //get all products
 router.get('/api/public/get-all-products', async (req, res) => {
     try {
@@ -22,6 +21,7 @@ router.get('/api/public/get-all-products', async (req, res) => {
         const {count, rows} = await Products.findAndCountAll({
             limit,
             offset,
+            where: {status: "OPENED"},
             attributes: {exclude: ['createdAt', 'description', 'otherVariant', 'pro_tsv', 'stock', 'tags', 'updatedAt']},
             include: [{
                 model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id', 'id', 'image_id']},
@@ -59,7 +59,10 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
         const rows = await Products.findAll({
             limit,
             offset,
-            where: {brand_id: req.params.id},
+            where: {
+                brand_id: req.params.id,
+                status: "OPENED"
+            },
             include: [{
                 model: ImageProduct,
                 as: "image_products",

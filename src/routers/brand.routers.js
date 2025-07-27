@@ -12,7 +12,7 @@ const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {Sequelize} = require("sequelize");
 const {getIO} = require("../services/websocket");
 const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
-const {sendAuthResponse} = require("../utils/authUtils");
+const {sendAuthResponse} = require("../utils/auth.utils");
 const chalk = require("chalk");
 const statusCode = require("../utils/statusCode");
 const {uploadToCloudinary} = require("../controllers/uploadController");
@@ -75,7 +75,7 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
     }
 });
 
-//send otp code to authentication email and number phone (in handle)
+//send otp code to authentication email and number phone (in a handle)
 router.post('/api/public/create-brand', upload.none(), async (req, res) => {
     try {
         let newBrand = {};
@@ -256,7 +256,7 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
 })
 
 //put: update brand's info
-router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), async (req, res) => {
+router.put('/api/vendor/brand-update', authenticateAccessToken, upload.array("images", 1), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
     } else
@@ -286,7 +286,7 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
             }
 
             if (req.files && req.files.length > 0) {
-                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_USER);
+                const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_VENDOR);
 
                 if (!imageUrl) {
                     return res.status(statusCode.errorHandle).json({message: 'Upload image failed!'});
@@ -294,7 +294,7 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
 
                 const [response] = await Brands.update(
                     {image_link: imageUrl.toString()}, {
-                        where: {id: req.body.id}
+                        where: {id: req.user.id}
                     })
                 if (response === 0) {
                     return res.status(statusCode.errorHandle).json({message: 'Update image failed!'});
@@ -306,6 +306,39 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.none(), a
             console.log(chalk.red(err));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
         }
+})
+
+router.put('/api/vendor/change-password', authenticateAccessToken, upload.none(), async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
+    } else {
+        try {
+            console.log(req.body);
+            const check = await Brands.findOne({
+                where: {id: req.user.id}
+            })
+
+            if (!check) {
+                return res.status(statusCode.errorHandle).json({message: 'No brand with this id'});
+            }
+
+            if (check.password !== req.body.oldPassword) {
+                return res.status(statusCode.errorHandle).json({message: 'Old password is incorrect'});
+            } else {
+                const [result] = await Brands.update(
+                    {password: req.body.newPassword},
+                    {where: {id: req.user.id}}
+                );
+                if (result === 0) {
+                    return res.status(statusCode.errorHandle).json({message: 'Update error! Please check your information again!'});
+                }
+                return res.status(statusCode.success).json('Updated successfully');
+            }
+        } catch (e) {
+            console.log(chalk.red(e));
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        }
+    }
 })
 
 //put:lock brand

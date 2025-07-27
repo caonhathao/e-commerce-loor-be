@@ -9,7 +9,7 @@ const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const {Sequelize} = require("sequelize");
 const {getIO} = require("../services/websocket");
-const {sendAuthResponse} = require("../utils/authUtils");
+const {sendAuthResponse} = require("../utils/auth.utils");
 const chalk = require("chalk");
 
 router.get('/api/public/get-featured-product', async (req, res) => {
