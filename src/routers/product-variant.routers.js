@@ -70,7 +70,7 @@ router.get('/api/vendor/get-all-variants', authenticateAccessToken, async (req, 
                 where: {
                     product_id: req.query.id,
                 },
-                attributes: ['id', 'sku', 'name','has_attribute']
+                attributes: ['id', 'sku', 'name', 'has_attribute']
             })
 
             return res.status(statusCode.success).json(result);
@@ -89,14 +89,12 @@ router.get('/api/vendor/get-variant-by-id/:id', async (req, res) => {
 //vendor creates new variants
 router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.none(), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
-        res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
+        return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
         try {
             delete ProductVariants.rawAttributes.variant_id;
             delete ProductVariants.tableAttributes.variant_id;
             ProductVariants.refreshAttributes();
-            console.log(Object.keys(ProductVariants.rawAttributes));
-            console.log(req.body)
 
             const newVariant = await ProductVariants.create({
                 id: generateID('VARI'),
@@ -110,28 +108,9 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
             });
 
             if (!newVariant) {
-                res.status(statusCode.errorHandle).json({message: 'Create failed! Please check fields again!'});
-            } else {
-                const product = await Products.findOne({
-                    where: {
-                        id: req.params.id
-                    }
-                });
-                if (!product) {
-                    return res.status(statusCode.errorHandle).json({message: 'Product not found!'});
-                }
-
-                const updatedProduct = await Products.update(
-                    {
-                        stock: product.stock + Number(req.body.stock),
-                        other_variant: true
-                    },
-                    {where: {id: req.params.id}}
-                );
-                if (!updatedProduct) {
-                    res.status(statusCode.errorHandle).json({message: 'Create failed! Can not update the total stock of this product'});
-                } else res.status(statusCode.success).json({message: 'Created new variant successfully!'});
+                return res.status(statusCode.errorHandle).json({message: 'Create failed! Please check fields again!'});
             }
+            return res.status(statusCode.success).json({message: 'Created new variant successfully!'});
         } catch (e) {
             console.log(chalk.red(e));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});

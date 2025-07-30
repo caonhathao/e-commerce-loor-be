@@ -3,12 +3,9 @@
 */
 
 const {createID, encryptPW, getPublicIdFromURL} = require('../utils/functions.global');
-
 const {Users, UserRoles, TokenStore, Banned, ShippingAddress, NotifyUser} = require('../models/_index');
-
 const _express = require('express');
 const router = _express.Router();
-
 const multer = require('multer');
 const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
@@ -248,7 +245,7 @@ router.put('/api/manager/lock-user-by-id', authenticateAccessToken, async (req, 
         }
 })
 
-//restore account
+//restore an account
 router.put('/api/manager/restore-user-by-id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});

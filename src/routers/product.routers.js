@@ -1,5 +1,5 @@
 const {Products, ImageProduct, ProductVariants, ProductAttributes, FeaturedProduct} = require('../models/_index');
-const {Op, Sequelize} = require('sequelize');
+const {Op, Sequelize, col, fn, literal} = require('sequelize');
 const {createID, getPublicIdFromURL, generateID} = require("../utils/functions.global");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
@@ -18,27 +18,46 @@ router.get('/api/public/get-all-products', async (req, res) => {
         const limit = parseInt(req.query.limit) || 20
         const offset = (page - 1) * limit
 
-        const {count, rows} = await Products.findAndCountAll({
-            limit,
-            offset,
-            where: {status: "OPENED"},
-            attributes: {exclude: ['createdAt', 'description', 'otherVariant', 'pro_tsv', 'stock', 'tags', 'updatedAt']},
-            include: [{
-                model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id', 'id', 'image_id']},
-            }],
+        const count = await Products.count({
+            where: {status: "OPENED"}
         });
 
-        if (!rows || rows.length === 0) {
-            return res.status(statusCode.errorHandle).json({message: 'No product found'});
-        } else {
-            return res.status(statusCode.success).json({
-                current_page: page,
-                total_items: count,
-                current_items: rows.length,
-                total_pages: Math.ceil(count / limit),
-                data: rows,
-            });
-        }
+        const {fn, col} = require("sequelize");
+
+        const rows = await Products.findAll({
+            limit,
+            offset,
+            subQuery: false, // QUAN TRỌNG: để SELECT và JOIN cùng cấp
+            where: {status: "OPENED"},
+            attributes: {
+                exclude: ['createdAt', 'description', 'otherVariant', 'pro_tsv', 'stock', 'tags', 'updatedAt'],
+                include: [
+                    [fn("COALESCE", fn("SUM", col("product_variants.stock")), 0), "stock"]
+                ]
+            },
+            include: [
+                {
+                    model: ImageProduct,
+                    as: "image_products",
+                    attributes: {exclude: ['product_id', 'id', 'image_id']}
+                },
+                {
+                    model: ProductVariants,
+                    as: "product_variants",
+                    attributes: [], // chỉ cần JOIN để SUM
+                    required: false
+                }
+            ],
+            group: ['Products.id', 'image_products.id'],
+        });
+
+        return res.status(statusCode.success).json({
+            current_page: page,
+            total_items: count,
+            current_items: rows.length,
+            total_pages: Math.ceil(count / limit),
+            data: rows,
+        });
     } catch (e) {
         console.log(chalk.red(e));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
