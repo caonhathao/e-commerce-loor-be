@@ -5,6 +5,7 @@ const {
     OrderDetail,
     NotifyBrand,
     NotifyUser,
+    Products,
     ProductVariants,
     Receipt,
     Brands
@@ -15,11 +16,11 @@ const express = require("express");
 const multer = require("multer");
 const upload = multer();
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Sequelize, Op} = require("sequelize");
+const {Sequelize, Op, literal} = require("sequelize");
 const {getIO} = require("../services/websocket");
 const {sendAuthResponse} = require("../utils/auth.utils");
 const chalk = require("chalk");
-const {systemNotify} = require('../utils/system-notify.utils')
+const systemNotify = require('../utils/system-notify.utils')
 
 //post: create new order
 router.post('/api/user/create-new-order', authenticateAccessToken, async (req, res) => {
@@ -36,30 +37,67 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
 
             //check valid order in every list
             //create a socket to notice about check-in order
-            io.to(`room_${req.user.id}`).emit('checking_order', {message: `Checking...${counting}`, step: counting + 1})
+            io.to(`room_${req.user.id}`).emit('checking_order', {
+                message: `Checking...${counting}`,
+                step: counting + 1
+            })
             for (const child of item.list) {
-
                 delete ProductVariants.rawAttributes.variant_id;
                 delete ProductVariants.tableAttributes.variant_id;
                 ProductVariants.refreshAttributes();
 
-                const product = await ProductVariants.findOne({
+                //check variant's exist
+                const variant = await ProductVariants.findOne({
                     where: {
                         id: child.variant_id
                     }
                 })
 
-                //if a system cannot find any product record or stock is not enough
-                if (!product || product.stock < child.amount) {
-                    return res.status(statusCode.errorHandle).json({message: `Product ${product.name} not found or not enough stock`});
+                if (!variant) {
+                    return res.status(statusCode.errorHandle).json({message: "Sản phẩn không tồn tại"})
                 }
 
-                //if the brand has been blocked
-                if (product.status === false) {
-                    return res.status(statusCode.errorHandle).json({message: 'Product has been blocked'});
+                const checkProduct = await Products.findOne({
+                    where: {
+                        id: variant.product_id
+                    }
+                })
+
+                if (!checkProduct) {
+                    return res.status(statusCode.errorHandle).json({message: "Sản phẩm không tồn tại"})
                 }
+
+                if (checkProduct.status === "CLOSED") {
+                    return res.status(statusCode.errorHandle).json({message: "Sản phẩm đã ngừng kinh doanh"})
+                }
+
+                if (variant.stock < child.amount) {
+                    return res.status(statusCode.errorHandle).json({message: "Sản phẩn hết hàng"});
+                }
+
+                if (variant.stock - child.amount > 0) {
+                    const updateVariant = await ProductVariants.update({
+                        stock: literal(`stock - ${child.amount}`)
+                    }, {
+                        where: {
+                            id: child.variant_id
+                        }
+                    })
+
+                    console.log(chalk.green(updateVariant))
+                } else {
+                    const updateVariant = await ProductVariants.update({
+                        stock: 0,
+                        status: "OUT_OF_STOCK"
+                    }, {
+                        where: {
+                            id: child.variant_id
+                        }
+                    })
+                    console.log(chalk.green(updateVariant))
+                }
+
             }
-
             //if pass,
             //creates a socket to notice about status order
             io.to(`room_${req.user.id}`).emit('creating_new_order', {
@@ -78,6 +116,8 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 address: req.body.address,
             })
 
+            console.log('New order:', newOrder)
+
             if (!newOrder) {
                 return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
             }
@@ -93,7 +133,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             //create a socket to notice about storing order
             io.to(`room_${req.user.id}`).emit('storing_order', {message: 'Storing...', step: counting + 3})
             for (const child of item.list) {
-                const product = await OrderDetail.create({
+                const result = await OrderDetail.create({
                     id: createID('ORD-DET'),
                     order_id: id,
                     variant_id: child.variant_id,
@@ -101,10 +141,8 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                     cost: child.cost,
                 })
 
-                if (!product) {
+                if (!result) {
                     return res.status(statusCode.errorHandle).json({message: 'Can not create order detail'});
-                } else if (product.stock < item.amount) {
-                    return res.status(statusCode.errorHandle).json({message: 'Not enough stock'});
                 }
             }
 
@@ -131,12 +169,23 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
             io.to(`room_${item.brand_id}`).emit('new_order', {
                 message: `Bạn có đơn dặt hàng mới`,
             });
-
         }
         return res.status(statusCode.success).json({message: 'Created successfully'});
-
     } catch (err) {
-        console.error(chalk.red(err));
+        console.error(chalk.red('Error name:'), err.name);
+
+        if (err.errors) {
+            err.errors.forEach((e, i) => {
+                console.error(chalk.red(`\n[Error ${i + 1}]`));
+                console.error(chalk.red('Path:'), e.path);
+                console.error(chalk.red('Value:'), e.value);
+                console.error(chalk.red('Message:'), e.message);
+            });
+        } else {
+            // fallback nếu không phải Sequelize lỗi chuẩn
+            console.error(chalk.red('Full Error:'), err);
+        }
+
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
 })

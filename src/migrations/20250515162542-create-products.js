@@ -39,11 +39,11 @@ module.exports = {
                 allowNull: false,
             },
             status: {
-                type: Sequelize.ENUM('OPENED','CLOSED'),
+                type: Sequelize.ENUM('OPENED', 'CLOSED'),
                 allowNull: true,
                 defaultValue: 'CLOSED',
             },
-            stock: {
+            sold: {
                 type: Sequelize.INTEGER,
                 allowNull: false,
                 defaultValue: 0,
