@@ -1,4 +1,4 @@
-export const systemNotify = {
+const systemNotify = {
     PENDING: {
         user_content: {
             title: "Bạn vừa tạo đơn hàng mới",
@@ -108,3 +108,4 @@ export const systemNotify = {
         }
     }
 };
+module.exports = systemNotify;

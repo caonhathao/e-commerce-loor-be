@@ -153,7 +153,7 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
     }
 );
 
-//post: user log in
+//post: user logs in
 router.post('/api/public/user-login', upload.none(), async (req, res) => {
     console.log(req.body)
     try {
