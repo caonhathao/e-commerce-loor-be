@@ -1,7 +1,7 @@
 const _express = require('express');
 const router = _express.Router();
 const {Orders, OrderDetail, NotifyBrand, NotifyUser, ProductVariants} = require('../models/_index');
-const {createID} = require("../utils/functions.global");
+const {createID, catchAndShowError} = require("../utils/functions.global");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
 const multer = require("multer");
@@ -61,6 +61,7 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
                     user_id: req.user.id,
                 },
                 attributes: {exclude: ['user_id', 'content', 'updatedAt']},
+                order: [['createdAt', 'DESC']],
             })
 
             if (!rows || count === 0) {
@@ -173,38 +174,6 @@ router.post('/api/user/get-all-notify-by-type', authenticateAccessToken, async (
         }
 })
 
-//accept an order by clicking to notice
-router.post('/api/vendor/accept-order', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
-        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else
-        try {
-            const result = await Orders.update({
-                status: 'CONFIRMED',
-            }, {
-                where: {id: req.body.order_id}
-            })
-
-            if (!result) return res.status(statusCode.errorHandle).json({message: 'Order is not existed or error'});
-
-            const newNoticeUser = await NotifyUser.create({
-                id: createID('NOT-USE'),
-                user_id: req.body.user_id,
-                title: 'Đơn hàng được chấp nhận',
-                content: 'Đơn hàng của bạn đã được xác nhận bởi nhà bán hàng.',
-                redirect_url: `/order-detail/${req.body.order_id}`,
-                type: "SUCCESS",
-                status: "IDLE",
-            })
-            if (!newNoticeUser) return res.status(statusCode.errorHandle).json({message: 'Can not create notice'});
-            return res.status(statusCode.success).json({message: 'Order has been confirmed'});
-
-        } catch (err) {
-            console.log(chalk.red(err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
-        }
-})
-
 //user or vendor open notification
 router.get('/api/user/open-notification', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
@@ -251,6 +220,71 @@ router.get('/api/user/open-notification', authenticateAccessToken, async (req, r
         } catch (err) {
             console.log(chalk.red(err))
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
+//accept an order by clicking to notice
+router.post('/api/vendor/accept-order', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            const result = await Orders.update({
+                status: 'CONFIRMED',
+            }, {
+                where: {id: req.body.order_id}
+            })
+
+            if (!result) return res.status(statusCode.errorHandle).json({message: 'Order is not existed or error'});
+
+            const newNoticeUser = await NotifyUser.create({
+                id: createID('NOT-USE'),
+                user_id: req.body.user_id,
+                title: 'Đơn hàng được chấp nhận',
+                content: 'Đơn hàng của bạn đã được xác nhận bởi nhà bán hàng.',
+                redirect_url: `/order-detail/${req.body.order_id}`,
+                type: "SUCCESS",
+                status: "IDLE",
+            })
+            if (!newNoticeUser) return res.status(statusCode.errorHandle).json({message: 'Can not create notice'});
+            return res.status(statusCode.success).json({message: 'Order has been confirmed'});
+
+        } catch (err) {
+            console.log(chalk.red(err))
+            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+})
+
+//mark all notifications are read
+router.put('/api/user/mark-all-notifications-read', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            if (req.user.role === 'ROLE_USER') {
+                await NotifyUser.update(
+                    {status: 'READ'},
+                    {
+                        where: {
+                            user_id: req.user.id,
+                            status: 'IDLE'
+                        }
+                    }
+                )
+            }else if (req.user.role === 'ROLE_VENDOR') {
+                await NotifyBrand.update(
+                    {status: 'READ'},
+                    {
+                        where: {
+                            brand_id: req.user.id,
+                            status: 'IDLE'
+                        }
+                    }
+                )
+            }
+            return res.status(statusCode.success).json({message: 'Đánh dấu thành công!'});
+        } catch (err) {
+            catchAndShowError(err, res)
         }
 })
 

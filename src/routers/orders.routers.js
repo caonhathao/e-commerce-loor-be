@@ -10,7 +10,7 @@ const {
     Receipt,
     Brands
 } = require('../models/_index');
-const {createID, formatTemplate} = require("../utils/functions.global");
+const {createID, formatTemplate, catchAndShowError} = require("../utils/functions.global");
 const statusCode = require("../utils/statusCode");
 const express = require("express");
 const multer = require("multer");
@@ -24,171 +24,158 @@ const systemNotify = require('../utils/system-notify.utils')
 
 //post: create new order
 router.post('/api/user/create-new-order', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
-        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else try {
-        //approve each order
-        let counting = 0;
-        const io = getIO();
+        if (req.user.role !== 'ROLE_USER') {
+            return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+        } else try {
+            //approve each order
+            let counting = 0;
+            const io = getIO();
 
-        for (const item of req.body.list) {
-            counting++;
-            const id = createID('ORD');
+            for (const item of req.body.list) {
+                counting++;
+                const id = createID('ORD');
 
-            //check valid order in every list
-            //create a socket to notice about check-in order
-            io.to(`room_${req.user.id}`).emit('checking_order', {
-                message: `Checking...${counting}`,
-                step: counting + 1
-            })
-            for (const child of item.list) {
-                delete ProductVariants.rawAttributes.variant_id;
-                delete ProductVariants.tableAttributes.variant_id;
-                ProductVariants.refreshAttributes();
-
-                //check variant's exist
-                const variant = await ProductVariants.findOne({
-                    where: {
-                        id: child.variant_id
-                    }
+                //check valid order in every list
+                //create a socket to notice about check-in order
+                io.to(`room_${req.user.id}`).emit('checking_order', {
+                    message: `Checking...${counting}`,
+                    step: counting + 1
                 })
+                for (const child of item.list) {
+                    delete ProductVariants.rawAttributes.variant_id;
+                    delete ProductVariants.tableAttributes.variant_id;
+                    ProductVariants.refreshAttributes();
 
-                if (!variant) {
-                    return res.status(statusCode.errorHandle).json({message: "Sản phẩn không tồn tại"})
-                }
-
-                const checkProduct = await Products.findOne({
-                    where: {
-                        id: variant.product_id
-                    }
-                })
-
-                if (!checkProduct) {
-                    return res.status(statusCode.errorHandle).json({message: "Sản phẩm không tồn tại"})
-                }
-
-                if (checkProduct.status === "CLOSED") {
-                    return res.status(statusCode.errorHandle).json({message: "Sản phẩm đã ngừng kinh doanh"})
-                }
-
-                if (variant.stock < child.amount) {
-                    return res.status(statusCode.errorHandle).json({message: "Sản phẩn hết hàng"});
-                }
-
-                if (variant.stock - child.amount > 0) {
-                    const updateVariant = await ProductVariants.update({
-                        stock: literal(`stock - ${child.amount}`)
-                    }, {
+                    //check variant's exist
+                    const variant = await ProductVariants.findOne({
                         where: {
                             id: child.variant_id
                         }
                     })
 
-                    console.log(chalk.green(updateVariant))
-                } else {
-                    const updateVariant = await ProductVariants.update({
-                        stock: 0,
-                        status: "OUT_OF_STOCK"
-                    }, {
+                    if (!variant) {
+                        return res.status(statusCode.errorHandle).json({message: "Sản phẩn không tồn tại"})
+                    }
+
+                    const checkProduct = await Products.findOne({
                         where: {
-                            id: child.variant_id
+                            id: variant.product_id
                         }
                     })
-                    console.log(chalk.green(updateVariant))
+
+                    if (!checkProduct) {
+                        return res.status(statusCode.errorHandle).json({message: "Sản phẩm không tồn tại"})
+                    }
+
+                    if (checkProduct.status === "CLOSED") {
+                        return res.status(statusCode.errorHandle).json({message: "Sản phẩm đã ngừng kinh doanh"})
+                    }
+
+                    if (variant.stock < child.amount) {
+                        return res.status(statusCode.errorHandle).json({message: "Sản phẩn hết hàng"});
+                    }
+
+                    if (variant.stock - child.amount > 0) {
+                        const updateVariant = await ProductVariants.update({
+                            stock: literal(`stock - ${child.amount}`)
+                        }, {
+                            where: {
+                                id: child.variant_id
+                            }
+                        })
+
+                        console.log(chalk.green(updateVariant))
+                    } else {
+                        const updateVariant = await ProductVariants.update({
+                            stock: 0,
+                            status: "OUT_OF_STOCK"
+                        }, {
+                            where: {
+                                id: child.variant_id
+                            }
+                        })
+                        console.log(chalk.green(updateVariant))
+                    }
+
+                }
+                //if pass,
+                //creates a socket to notice about status order
+                io.to(`room_${req.user.id}`).emit('creating_new_order', {
+                    message: `Creating...${counting}`,
+                    step: counting + 2
+                })
+
+                const newOrder = await Orders.create({
+                    id: id,
+                    user_id: req.user.id,
+                    brand_id: item.brand_id,
+                    cost: item.cost,
+                    fee: item.fee || 0,
+                    status: 'PENDING',
+                    shipping_type: req.body.shipping_type,
+                    address: req.body.address,
+                })
+
+                console.log('New order:', newOrder)
+
+                if (!newOrder) {
+                    return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
                 }
 
-            }
-            //if pass,
-            //creates a socket to notice about status order
-            io.to(`room_${req.user.id}`).emit('creating_new_order', {
-                message: `Creating...${counting}`,
-                step: counting + 2
-            })
-
-            const newOrder = await Orders.create({
-                id: id,
-                user_id: req.user.id,
-                brand_id: item.brand_id,
-                cost: item.cost,
-                fee: item.fee || 0,
-                status: 'PENDING',
-                shipping_type: req.body.shipping_type,
-                address: req.body.address,
-            })
-
-            console.log('New order:', newOrder)
-
-            if (!newOrder) {
-                return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
-            }
-
-            await Receipt.create({
-                id: createID('BILL'),
-                user_id: req.user.id,
-                order_id: id,
-                payment: req.body.method,
-            })
-
-            //if all orders valid
-            //create a socket to notice about storing order
-            io.to(`room_${req.user.id}`).emit('storing_order', {message: 'Storing...', step: counting + 3})
-            for (const child of item.list) {
-                const result = await OrderDetail.create({
-                    id: createID('ORD-DET'),
+                await Receipt.create({
+                    id: createID('BILL'),
+                    user_id: req.user.id,
                     order_id: id,
-                    variant_id: child.variant_id,
-                    amount: child.amount,
-                    cost: child.cost,
+                    payment: req.body.method,
                 })
 
-                if (!result) {
-                    return res.status(statusCode.errorHandle).json({message: 'Can not create order detail'});
+                //if all orders valid
+                //create a socket to notice about storing order
+                io.to(`room_${req.user.id}`).emit('storing_order', {message: 'Storing...', step: counting + 3})
+                for (const child of item.list) {
+                    const result = await OrderDetail.create({
+                        id: createID('ORD-DET'),
+                        order_id: id,
+                        variant_id: child.variant_id,
+                        amount: child.amount,
+                        cost: child.cost,
+                    })
+
+                    if (!result) {
+                        return res.status(statusCode.errorHandle).json({message: 'Can not create order detail'});
+                    }
                 }
+
+                await NotifyUser.create({
+                    id: createID('NOT-USE'),
+                    user_id: req.user.id,
+                    title: 'Bạn vừa đặt hàng thành công',
+                    content: "Đơn hàng của bạn đang chờ nhà bán hàng phê duyệt",
+                    redirect_url: `/order-detail/${id}`,
+                    type: "NOTICE",
+                    status: "IDLE",
+                })
+
+                await NotifyBrand.create({
+                    id: createID('NOT-BRA'),
+                    brand_id: item.brand_id,
+                    title: 'Bạn dó đơn hàng mới',
+                    content: "Bạn có đơn đặt hàng mới",
+                    redirect_url: `/order-detail/${id}`,
+                    type: "ORDER",
+                    status: "IDLE",
+                })
+
+                io.to(`room_${item.brand_id}`).emit('new_order', {
+                    message: `Bạn có đơn dặt hàng mới`,
+                });
             }
-
-            await NotifyUser.create({
-                id: createID('NOT-USE'),
-                user_id: req.user.id,
-                title: 'Bạn vừa đặt hàng thành công',
-                content: "Đơn hàng của bạn đang chờ nhà bán hàng phê duyệt",
-                redirect_url: `/order-detail/${id}`,
-                type: "NOTICE",
-                status: "IDLE",
-            })
-
-            await NotifyBrand.create({
-                id: createID('NOT-BRA'),
-                brand_id: item.brand_id,
-                title: 'Bạn dó đơn hàng mới',
-                content: "Bạn có đơn đặt hàng mới",
-                redirect_url: `/order-detail/${id}`,
-                type: "ORDER",
-                status: "IDLE",
-            })
-
-            io.to(`room_${item.brand_id}`).emit('new_order', {
-                message: `Bạn có đơn dặt hàng mới`,
-            });
+            return res.status(statusCode.success).json({message: 'Created successfully'});
+        } catch (err) {
+            catchAndShowError(err, res)
         }
-        return res.status(statusCode.success).json({message: 'Created successfully'});
-    } catch (err) {
-        console.error(chalk.red('Error name:'), err.name);
-
-        if (err.errors) {
-            err.errors.forEach((e, i) => {
-                console.error(chalk.red(`\n[Error ${i + 1}]`));
-                console.error(chalk.red('Path:'), e.path);
-                console.error(chalk.red('Value:'), e.value);
-                console.error(chalk.red('Message:'), e.message);
-            });
-        } else {
-            // fallback nếu không phải Sequelize lỗi chuẩn
-            console.error(chalk.red('Full Error:'), err);
-        }
-
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
     }
-})
+)
 
 //get: get all orders from any customer
 router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res) => {
@@ -256,29 +243,45 @@ router.get('/api/user/get-all-orders-by-status', authenticateAccessToken, async 
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            let result;
+            const limit = parseInt(req.query.limit) || 10;
+            const page = parseInt(req.query.page) || 1;
+            const offset = (page - 1) * limit;
             if (req.user.role === 'ROLE_USER') {
-                result = await Orders.findAll({
+                const {count, rows} = await Orders.findAndCountAll({
+                    limit,
+                    offset,
                     where: {
                         user_id: req.user.id,
                         status: req.query.status,
                     },
                     attributes: {exclude: ['updatedAt', 'fee', 'brand_id', 'user_id']},
                 })
-                return res.status(statusCode.success).json(result);
+                return res.status(statusCode.success).json({
+                    current_page: page,
+                    total_items: count,
+                    current_items: rows.length,
+                    total_pages: Math.ceil(count / limit),
+                    data: rows,
+                });
             } else if (req.user.role === 'ROLE_VENDOR') {
-                result = await Orders.findAll({
+                const {count, rows} = await Orders.findAndCountAll({
                     where: {
                         brand_id: req.user.id,
                         status: req.query.status,
                     },
                     attributes: {exclude: ['updatedAt', 'fee', 'brand_id', 'user_id']},
                 })
-                return res.status(statusCode.success).json(result);
+
+                return res.status(statusCode.success).json({
+                    current_page: page,
+                    total_items: count,
+                    current_items: rows.length,
+                    total_pages: Math.ceil(count / limit),
+                    data: rows,
+                });
             }
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -312,6 +315,40 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
         } catch (e) {
             console.log(chalk.red(e));
             return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        }
+    }
+})
+
+// search orders by id
+router.get('/api/user/search-by-id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Quyền truy cứu bị từ chối'});
+    } else {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
+                where: {
+                    id: {
+                        [Op.like]: `%${req.query.keyword}%`
+                    }
+                },
+                attributes: {exclude: ['user_id', 'shipping_type', 'brand_id', 'updatedAt']},
+            })
+
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        } catch (e) {
+            catchAndShowError(e, res)
         }
     }
 })

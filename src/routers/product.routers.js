@@ -1,6 +1,6 @@
 const {Products, ImageProduct, ProductVariants, ProductAttributes, FeaturedProduct} = require('../models/_index');
 const {Op, Sequelize, col, fn, literal} = require('sequelize');
-const {createID, getPublicIdFromURL, generateID} = require("../utils/functions.global");
+const {createID, getPublicIdFromURL, generateID, catchAndShowError} = require("../utils/functions.global");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const multer = require('multer');
 const {getIO} = require("../services/websocket");
@@ -99,7 +99,6 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
             total_pages: Math.ceil(count / limit),
             data: rows,
         });
-
     } catch (err) {
         console.log(chalk.red(err));
         return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
@@ -223,21 +222,32 @@ router.get('/api/public/get-product-by-price', async (req, res) => {
 });
 
 //get products by keyword
-router.get('/api/public/get-product-by-key/:key', async (req, res) => {
+router.get('/api/public/search-product', async (req, res) => {
     try {
-        const key = req.params.key.toLowerCase();
-        const results = await Products.findAll({
+        const key = req.query.keyword.toLowerCase();
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
+
+        const {count, rows} = await Products.findAndCountAll({
+            limit,
+            offset,
             where: Sequelize.literal(`pro_tsv @@ plainto_tsquery('store.vn_unaccent', '${key}')`),
             attributes: {
                 exclude: ['pro_tsv', 'createdAt', 'updatedAt', 'tags']
             }
         });
 
-        if (!results) res.status(404).json({message: 'No product found with keyword'});
-        else res.status(200).json(results);
+        return res.status(statusCode.success).json({
+            current_page: page,
+            total_items: count,
+            current_items: rows.length,
+            total_pages: Math.ceil(count / limit),
+            data: rows,
+        });
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res);
     }
 })
 
