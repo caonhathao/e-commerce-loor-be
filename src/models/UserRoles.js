@@ -1,7 +1,5 @@
-const {nanoid} = require('nanoid');
-
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('UserRoles', {
+    const UserRoles = sequelize.define('UserRoles', {
             id: {
                 allowNull: false,
                 primaryKey: true,
@@ -26,10 +24,13 @@ module.exports = (sequelize, DataTypes) => {
         {
             tableName: 'user_roles',
             timestamps: true,
-            hooks: {
-                beforeCreate: (userRoles, options) => {
-                    userRoles.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-                }
-            }
         });
+
+    UserRoles.associate = (models) => {
+        UserRoles.belongsTo(models.Users, {
+            foreignKey: 'user_id',
+            as: 'Users',
+        })
+    }
+    return UserRoles;
 }

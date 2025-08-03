@@ -13,7 +13,7 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            name:{
+            name: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
@@ -31,19 +31,27 @@ module.exports = {
                 allowNull: false,
             },
             status: {
-                type: Sequelize.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
+                type: Sequelize.ENUM('IN_STOCK', 'OUT_OF_STOCK', 'PRE_ORDER'),
                 allowNull: 'OUT_OF_STOCK',
             },
-            has_attribute:{
+            has_attribute: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,
                 defaultValue: true,
             },
+            image_link: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             createdAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             updatedAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             }
         })
     },

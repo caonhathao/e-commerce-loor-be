@@ -30,11 +30,11 @@ module.exports=(sequelize,DataTypes) => {
     ChatSupport.associate = function(models) {
         ChatSupport.belongsTo(models.Users,{
             foreignKey:'user_id',
-            as : 'users',
+            as : 'Users',
         })
         ChatSupport.belongsTo(models.Brands,{
             foreignKey:'brand_id',
-            as: 'brands',
+            as: 'Brands',
         })
     }
     return ChatSupport;

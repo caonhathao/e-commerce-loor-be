@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
     ProductAttribute.associate = (models) => {
         ProductAttribute.belongsTo(models.ProductVariants, {
             foreignKey: 'variant_id',
-            as: 'product_variants',
+            as: 'ProductVariants',
         })
     }
     return ProductAttribute;

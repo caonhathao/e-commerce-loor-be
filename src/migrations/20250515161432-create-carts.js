@@ -17,10 +17,6 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            image_link: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
             amount: {
                 type: Sequelize.INTEGER,
                 allowNull: false,
@@ -32,11 +28,15 @@ module.exports = {
                 defaultValue: false,
             },
             createdAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             updatedAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
-            },
+                defaultValue: Sequelize.fn('NOW')
+            }
         })
     },
 

@@ -50,11 +50,11 @@ module.exports = (sequelize, DataTypes) => {
     Receipt.associate = (models) => {
         Receipt.belongsTo(models.Users, {
             foreignKey: 'id',
-            as: 'users',
+            as: 'Users',
         })
         Receipt.belongsTo(models.Orders, {
             foreignKey: 'id',
-            as: 'orders',
+            as: 'Orders',
         })
     }
 

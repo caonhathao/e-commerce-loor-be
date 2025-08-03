@@ -38,15 +38,12 @@ const umzug = new Umzug({
 });
 
 module.exports = async () => {
-    // // XÓA schema trước (xóa toàn bộ bảng trong schema đó)
     // await sequelize.query('DROP SCHEMA IF EXISTS store CASCADE;');
     // console.log('🗑️ Dropped schema "store"');
     //
-    // // TẠO LẠI schema
     // await sequelize.query('CREATE SCHEMA IF NOT EXISTS store;');
     // console.log('📦 Created schema "store"');
 
-    // 🧩 Kiểm tra có tìm thấy migration không
     const migrations = await umzug.pending();
     console.log('🔎 Migrations found:', migrations.map(m => m.name));
 

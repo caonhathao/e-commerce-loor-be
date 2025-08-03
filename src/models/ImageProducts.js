@@ -1,6 +1,5 @@
-const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
-    const ImageProduct = sequelize.define('ImageProduct', {
+    const ImageProducts = sequelize.define('ImageProducts', {
         id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -27,19 +26,14 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'image_products',
         timestamps: false,
         schema: 'store',
-        hooks: {
-            beforeCreate: (ImageProduct, options) => {
-                ImageProduct.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
 
-    ImageProduct.associate = (models) => {
-        ImageProduct.belongsTo(models.Products, {
+    ImageProducts.associate = (models) => {
+        ImageProducts.belongsTo(models.Products, {
             foreignKey: 'product_id',
-            as: 'products',
+            as: 'Products',
         });
     };
 
-    return ImageProduct;
+    return ImageProducts;
 };

@@ -15,33 +15,38 @@ module.exports = (sequelize, DataTypes) => {
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
-        brand_id:{
-            type:DataTypes.STRING,
-            allowNull:true,
+        brand_id: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
         address: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        shipping_type:{
-          type:DataTypes.ENUM('GIAO_HANG_NHANH','GIAO_HANG_TIET_KIEM','GIAO HANG_HOA_TOC'),
-            allowNull:false,
-            defaultValue:'GIAO_HANG_NHANH',
+        shipping_type: {
+            type: DataTypes.ENUM('GIAO_HANG_NHANH', 'GIAO_HANG_TIET_KIEM', 'GIAO HANG_HOA_TOC'),
+            allowNull: false,
+            defaultValue: 'GIAO_HANG_NHANH',
         },
         cost: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        fee:{
-            type:DataTypes.INTEGER,
-            allowNull:false,
-            defaultValue:0,
+        fee: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
         },
         status: {
-            type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED','POSTPONED','REFUNDED','COMPLETE'),
+            type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED', 'POSTPONED', 'REFUNDED', 'COMPLETE'),
             allowNull: false,
         },
-    },{
+        is_review: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        }
+    }, {
         tableName: 'orders',
         schema: 'store',
     });
@@ -49,15 +54,15 @@ module.exports = (sequelize, DataTypes) => {
     Orders.associate = (models) => {
         Orders.belongsTo(models.Users, {
             foreignKey: 'user_id',
-            as: 'users',
+            as: 'Users',
         })
         Orders.hasMany(models.OrderDetail, {
             foreignKey: 'order_id',
             as: 'OrderDetail',
         })
         Orders.hasOne(models.Receipt, {
-            foreignKey: 'order_id',
-            as: 'receipt',
+                foreignKey: 'order_id',
+                as: 'Receipt',
             }
         )
     };

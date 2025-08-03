@@ -87,7 +87,7 @@ router.get('/api/vendor/get-variant-by-id/:id', async (req, res) => {
 })
 
 //vendor creates new variants
-router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.none(), async (req, res) => {
+router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, upload.array('images', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
@@ -95,6 +95,16 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
             delete ProductVariants.rawAttributes.variant_id;
             delete ProductVariants.tableAttributes.variant_id;
             ProductVariants.refreshAttributes();
+
+            if (req.files.length === 0 || !req.files) {
+                return res.status(statusCode.missingModule).json({message: 'Thiếu hình ảnh sản phẩm'});
+            }
+
+            const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_VARIANT)
+
+            if (!imageUrl) {
+                return res.status(statusCode.errorHandle).json({message: 'Tải ảnh thất bại!'});
+            }
 
             const newVariant = await ProductVariants.create({
                 id: generateID('VARI'),
@@ -105,6 +115,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
                 name: req.body.name,
                 status: req.body.status,
                 has_attribute: false,
+                image_link: imageUrl.toString()
             });
 
             if (!newVariant) {

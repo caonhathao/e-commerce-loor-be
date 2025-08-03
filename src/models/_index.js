@@ -19,7 +19,7 @@ if (config.env) {
 }
 
 //these models below need to create first
-const priorityModels = ['Users', 'Brands', 'Products'];
+const priorityModels = ['Users', 'Brands', 'Products','ImageReviews'];
 
 fs
     .readdirSync(__dirname)
@@ -41,6 +41,8 @@ fs
     });
 
 Object.keys(db).forEach(modelName => {
+    // console.log('✔ Models loaded:', Object.keys(db));
+
     if (db[modelName].associate) {
         db[modelName].associate(db);
     }

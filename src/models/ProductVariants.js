@@ -1,5 +1,3 @@
-const {nanoid} = require('nanoid');
-
 module.exports = (sequelize, DataTypes) => {
     const ProductVariants = sequelize.define('ProductVariants', {
         id: {
@@ -16,8 +14,8 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: 'CASCADE',
         },
-        name:{
-            type:DataTypes.STRING,
+        name: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
         sku: {
@@ -33,36 +31,35 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        status:{
-            type:DataTypes.ENUM('IN_STOCK', 'OUT_OF_STOCK','PRE_ORDER'),
+        status: {
+            type: DataTypes.ENUM('IN_STOCK', 'OUT_OF_STOCK', 'PRE_ORDER'),
             allowNull: 'OUT_OF_STOCK',
         },
         has_attribute: {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        image_link: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        }
     }, {
         tableName: 'product_variants',
         schema: 'store',
         timestamps: true,
-        hooks: {
-            beforeCreate: (product_variant, options) => {
-                product_variant.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
     ProductVariants.associate = (models) => {
         ProductVariants.belongsTo(models.Products, {
             foreignKey: 'product_id',
-            as: 'products',
+            as: 'Products',
         })
-        ProductVariants.hasMany(models.ProductAttributes,{
+        ProductVariants.hasMany(models.ProductAttributes, {
             foreignKey: 'variant_id',
-            as: 'product_attributes',
+            as: 'ProductAttributes',
         })
         ProductVariants.hasMany(models.OrderDetail, {
             foreignKey: 'variant_id',
-            as: 'order_detail',
+            as: 'OrderDetail',
         })
     }
     return ProductVariants;
