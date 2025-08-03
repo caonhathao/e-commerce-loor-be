@@ -6,8 +6,9 @@ const multer = require("multer");
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const chalk = require("chalk");
 const {where} = require("sequelize");
+const {catchAndShowError} = require("../utils/functions.global");
 
-//get: get all order from any customer
+//get: get all orders from any customer
 //get order detail
 router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
@@ -22,12 +23,12 @@ router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req
                         attributes: {exclude: ['id', 'order_id', 'createdAt', 'updatedAt']},
                         include: [{
                             model: ProductVariants,
-                            as: 'product_variants',
+                            as: 'ProductVariants',
                             attributes: ['name', 'sku', 'price']
                         }]
                     },
                 ],
-                attributes: {exclude: [ 'updatedAt']},
+                attributes: {exclude: ['updatedAt']},
                 where: {
                     id: req.params.id
                 }
@@ -35,8 +36,7 @@ router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req
             if (!response) return res.status(statusCode.errorHandle).json({message: 'Can not found this order detail'})
             return res.status(statusCode.success).json(response);
         } catch (err) {
-            console.log(chalk.red(err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 })
 

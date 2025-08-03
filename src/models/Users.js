@@ -1,5 +1,3 @@
-const {nanoid} = require('nanoid');
-
 module.exports = (sequelize, DataTypes) => {
     const Users = sequelize.define('Users', {
         id: {
@@ -50,45 +48,44 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'users',
         schema: 'store',
         timestamps: true,
-        hooks: {
-            beforeCreate: (user, options) => {
-                user.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
 
     Users.associate = (models) => {
+        Users.hasOne(models.UserRoles, {
+            foreignKey: 'user_id',
+            as: 'UserRoles',
+        })
         Users.hasMany(models.Receipt, {
             foreignKey: 'user_id',
-            as: 'receipt',
+            as: 'Receipt',
         })
         Users.hasMany(models.Carts, {
             foreignKey: 'user_id',
-            as: 'cart',
+            as: 'Cart',
         })
         Users.hasMany(models.ShoppingLog, {
             foreignKey: 'user_id',
             as: 'shopping_log',
         })
-        Users.hasMany(models.reviews, {
+        Users.hasMany(models.Reviews, {
             foreignKey: 'user_id',
-            as: 'reviews',
+            as: 'Reviews',
         })
         Users.hasMany(models.NotifyUser, {
             foreignKey: 'user_id',
-            as: 'notify_user',
+            as: 'NotifyUser',
         })
         Users.hasMany(models.Orders, {
             foreignKey: 'user_id',
-            as: 'orders',
+            as: 'Orders',
         })
         Users.hasOne(models.Banned, {
             foreignKey: 'user_id',
-            as: 'banned',
+            as: 'Banned',
         })
         Users.hasMany(models.ShippingAddress, {
             foreignKey: 'user_id',
-            as: 'shipping_address',
+            as: 'ShippingAddress',
         })
     };
 

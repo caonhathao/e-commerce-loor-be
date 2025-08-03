@@ -27,18 +27,27 @@ module.exports = {
             },
             content: {
                 type: Sequelize.STRING,
-                allowNull: true,
+                allowNull: false,
+            },
+            has_image: {
+                type: Sequelize.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
             },
             rating: {
                 type: Sequelize.ENUM('1', '2', '3', '4', '5'),
                 allowNull: false,
             },
             createdAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             updatedAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
-            },
+                defaultValue: Sequelize.fn('NOW')
+            }
         })
     },
 

@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     Districts.associate = (models) => {
         Districts.belongsTo(models.Provinces, {
             foreignKey: 'province_id',
-            as: 'province',
+            as: 'Provinces',
         })
     }
 

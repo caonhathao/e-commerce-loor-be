@@ -1,7 +1,6 @@
-const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
-    const Review = sequelize.define('reviews', {
-        id:{
+    const Reviews = sequelize.define('Reviews', {
+        id: {
             type: DataTypes.STRING,
             primaryKey: true,
             allowNull: false,
@@ -24,11 +23,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         content: {
             type: DataTypes.STRING,
-            allowNull: true,
-        },
-        timeCreated: {
-            type: DataTypes.DATE,
             allowNull: false,
+        },
+        has_image: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
         rating: {
             type: DataTypes.ENUM('1', '2', '3', '4', '5'),
@@ -39,21 +39,20 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'reviews',
         schema: 'store',
         timestamps: true,
-        hooks: {
-            beforeCreate: (reviews, options) => {
-                reviews.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
-    Review.associate = (models) => {
-        Review.belongsTo(models.Users, {
+    Reviews.associate = (models) => {
+        Reviews.belongsTo(models.Users, {
             foreignKey: 'user_id',
-            as: 'users',
+            as: 'Users',
         })
-        Review.belongsTo(models.Products, {
+        Reviews.belongsTo(models.Products, {
             foreignKey: 'user_id',
-            as: 'products',
+            as: 'Products',
+        })
+        Reviews.hasMany(models.ImageReviews, {
+            foreignKey: 'review_id',
+            as: 'ImageReviews',
         })
     };
-    return Review;
+    return Reviews;
 }

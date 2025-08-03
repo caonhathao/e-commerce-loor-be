@@ -25,22 +25,22 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
                 attributes: {exclude: ['createdAt', 'updatedAt', 'user_id']},
                 include: [{
                     model: ProductVariants,
-                    as: 'product_variants',
-                    attributes: ['name', 'price', 'stock'],
+                    as: 'ProductVariants',
+                    attributes: ['name', 'price', 'stock', 'image_link'],
                     include: [{
                         model: Products,
-                        as: 'products',
+                        as: 'Products',
                         attributes: ['status', 'brand_id'],
                         include: [{
                             model: Brands,
-                            as: 'brands',
+                            as: 'Brands',
                             attributes: ['name', 'image_link'],
                         }]
                     }]
                 }],
                 order: [
-                    [{model: ProductVariants, as: 'product_variants'},
-                        {model: Products, as: 'products'},
+                    [{model: ProductVariants, as: 'ProductVariants'},
+                        {model: Products, as: 'Products'},
                         'brand_id', 'ASC'] // Sắp xếp tăng dần theo brand_id
                 ]
             })
@@ -51,8 +51,8 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
             const groupedByBrand = {};
 
             for (const cart of result) {
-                const brand = cart.product_variants?.products?.brands;
-                const brandId = cart.product_variants?.products?.brand_id;
+                const brand = cart.ProductVariants?.Products?.Brands;
+                const brandId = cart.ProductVariants?.Products?.brand_id;
 
                 if (!groupedByBrand[brandId]) {
                     groupedByBrand[brandId] = {
@@ -69,17 +69,16 @@ router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
             const groupedResult = Object.values(groupedByBrand).map(group => {
                 group.items = group.items.map(cart => {
                     const cartJSON = cart.toJSON(); // chuyển instance Sequelize thành object thuần
-                    delete cartJSON.product_variants.products.brands; // xoá trường products
-                    delete cartJSON.product_variants.products.brand_id;
+                    delete cartJSON.ProductVariants.Products.Brands; // xoá trường products
+                    delete cartJSON.ProductVariants.Products.brand_id;
                     return cartJSON;
                 });
                 return group;
             });
 
-            return res.status(200).json(groupedResult);
+            return res.status(statusCode.success).json(groupedResult);
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 

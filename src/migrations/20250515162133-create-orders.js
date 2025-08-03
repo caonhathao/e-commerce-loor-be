@@ -19,18 +19,18 @@ module.exports = {
                 },
                 onDelete: 'CASCADE',
             },
-            brand_id:{
+            brand_id: {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            address:{
+            address: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            shipping_type:{
-                type:Sequelize.ENUM('GIAO_HANG_NHANH','GIAO_HANG_TIET_KIEM','GIAO HANG_HOA_TOC'),
-                allowNull:false,
-                defaultValue:'GIAO_HANG_NHANH',
+            shipping_type: {
+                type: Sequelize.ENUM('GIAO_HANG_NHANH', 'GIAO_HANG_TIET_KIEM', 'GIAO HANG_HOA_TOC'),
+                allowNull: false,
+                defaultValue: 'GIAO_HANG_NHANH',
             },
             cost: {
                 type: Sequelize.INTEGER,
@@ -42,15 +42,24 @@ module.exports = {
                 defaultValue: 0,
             },
             status: {
-                type: Sequelize.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED','POSTPONED','REFUNDED','COMPLETE'),
+                type: Sequelize.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED', 'POSTPONED', 'REFUNDED', 'COMPLETE'),
                 allowNull: false,
             },
+            is_review: {
+                type: Sequelize.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            },
             createdAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             updatedAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
-            },
+                defaultValue: Sequelize.fn('NOW')
+            }
         })
     },
 

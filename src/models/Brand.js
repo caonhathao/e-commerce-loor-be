@@ -49,15 +49,15 @@ module.exports = (sequelize, DataTypes) => {
     Brand.associate = (models) => {
         Brand.hasMany(models.Chats, {
             foreignKey: 'brand_id',
-            as: 'chatSupport',
+            as: 'Chats',
         })
         Brand.hasMany(models.Products, {
             foreignKey: 'brand_id',
-            as: 'products',
+            as: 'Products',
         })
         Brand.hasOne(models.Banned, {
             foreignKey: 'brand_id',
-            as: 'banned',
+            as: 'Banned',
         })
     };
     return Brand;

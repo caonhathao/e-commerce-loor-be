@@ -22,16 +22,20 @@ module.exports = {
                 allowNull: false,
             },
             createdAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             updatedAt: {
+                allowNull: false,
                 type: Sequelize.DATE,
+                defaultValue: Sequelize.fn('NOW')
             },
             rating: {
                 type: Sequelize.ENUM('LOW', 'NORMAL', 'WARNING', 'HIGH', 'SERIOUS'),
                 defaultValue: 'LOW',
                 allowNull: false
-            }
+            },
         })
     },
 

@@ -10,7 +10,7 @@ const chalk = require("chalk");
 const statusCode = require('../utils/statusCode');
 const {ShippingAddress, Provinces, Districts} = require("../models/_index");
 
-//get all address
+//get all addresses
 router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});

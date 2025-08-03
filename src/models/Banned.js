@@ -1,4 +1,3 @@
-const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
     const Banned = sequelize.define('Banned', {
         id: {
@@ -30,7 +29,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-
         rating: {
             type: DataTypes.ENUM('LOW', 'NORMAL', 'WARNING', 'HIGH', 'SERIOUS'),
             defaultValue: 'LOW',
@@ -38,23 +36,18 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: 'banned',
-        timestamps: false,
+        timestamps: true,
         schema: 'store',
-        hooks: {
-            beforeCreate: (Banned, options) => {
-                Banned.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
 
     Banned.associate = (models) => {
         Banned.belongsTo(models.Users, {
             foreignKey: 'user_id',
-            as: 'users',
+            as: 'Users',
         })
         Banned.belongsTo(models.Brands, {
             foreignKey: 'brand_id',
-            as: 'brands',
+            as: 'Brands',
         })
     };
 

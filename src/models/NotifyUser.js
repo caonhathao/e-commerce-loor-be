@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
             references: {
                 model: 'users',
                 key: 'id'
-            }
+            },
+            onDelete: 'CASCADE',
         },
         title:{
             type:DataTypes.STRING,
@@ -43,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     NotifyUser.associate = (models) => {
         NotifyUser.belongsTo(models.Users, {
             foreignKey: 'user_id',
-            as: 'users'
+            as: 'Users'
         })
     };
     return NotifyUser;

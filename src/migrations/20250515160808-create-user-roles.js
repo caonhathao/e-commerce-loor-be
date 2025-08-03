@@ -25,11 +25,15 @@ module.exports = {
         defaultValue: 'ROLE_USER',
       },
       createdAt: {
+        allowNull: false,
         type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW')
       },
       updatedAt: {
+        allowNull: false,
         type: Sequelize.DATE,
-      },
+        defaultValue: Sequelize.fn('NOW')
+      }
     })
   },
 

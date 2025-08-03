@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
             onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         name: {
             type: DataTypes.STRING,
@@ -36,11 +37,11 @@ module.exports = (sequelize, DataTypes) => {
     SubCategory.associate = (models) => {
         SubCategory.belongsTo(models.Category, {
             foreignKey: 'category_id',
-            as: 'category',
+            as: 'Category',
         })
         SubCategory.hasMany(models.Products, {
             foreignKey: 'subcategory_id',
-            as: 'products',
+            as: 'Products',
         })
     };
     return SubCategory;

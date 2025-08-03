@@ -30,6 +30,8 @@ module.exports = (sequelize, DataTypes) => {
                     model: 'brands',
                     key: 'id',
                 },
+                onCascade: 'CASCADE',
+                onDelete: 'CASCADE',
             },
             name: {
                 type: DataTypes.STRING,
@@ -95,38 +97,38 @@ module.exports = (sequelize, DataTypes) => {
 
     Products.associate = (models) => {
 
-        Products.hasMany(models.ImageProduct, {
+        Products.hasMany(models.ImageProducts, {
             foreignKey: 'product_id',
-            as: 'image_products',
+            as: 'ImageProducts',
         })
 
         Products.hasMany(models.ProductVariants, {
             foreignKey: 'product_id',
-            as: 'product_variants',
+            as: 'ProductVariants',
         })
 
-        Products.hasMany(models.reviews, {
+        Products.hasMany(models.Reviews, {
             foreignKey: 'product_id',
-            as: 'reviews',
+            as: 'Reviews',
         })
 
         Products.belongsTo(models.Category, {
             foreignKey: 'category_id',
-            as: 'categories'
+            as: 'Category'
         });
 
         Products.belongsTo(models.SubCategory, {
             foreignKey: 'subcategory_id',
-            as: 'sub_categories'
+            as: 'SubCategory'
         });
 
         Products.belongsTo(models.Brands, {
             foreignKey: 'brand_id',
-            as: 'brands'
+            as: 'Brands'
         });
         Products.hasOne(models.FeaturedProduct, {
             foreignKey: 'product_id',
-            as: 'featured_product',
+            as: 'FeaturedProduct',
         })
     };
 

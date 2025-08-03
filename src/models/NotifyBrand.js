@@ -11,11 +11,12 @@ module.exports = (sequelize, DataTypes) => {
             references: {
                 model: 'brands',
                 key: 'id'
-            }
+            },
+            onDelete: 'CASCADE',
         },
-        title:{
-            type:DataTypes.STRING,
-            allowNull:false,
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
         content: {
             type: DataTypes.STRING,
@@ -29,22 +30,22 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'NOTICE',
             allowNull: false
         },
-        status:{
-            type:DataTypes.ENUM("READ","IDLE"),
-            defaultValue:"IDLE",
-            allowNull:false,
+        status: {
+            type: DataTypes.ENUM("READ", "IDLE"),
+            defaultValue: "IDLE",
+            allowNull: false,
         }
     }, {
         tableName: 'notify_brand',
         schema: 'store',
+        timestamps: true,
     });
 
     NotifyBrand.associate = (models) => {
         NotifyBrand.belongsTo(models.Users, {
             foreignKey: 'brand_id',
-            as: 'brands'
+            as: 'Brands'
         })
     };
-    return NotifyBrand
-        ;
+    return NotifyBrand;
 }

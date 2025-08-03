@@ -33,16 +33,17 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         tableName: 'order_detail',
         schema: 'store',
+        timestamps: true,
     });
 
     OrderDetail.associate = (models) => {
         OrderDetail.belongsTo(models.Orders, {
             foreignKey: 'order_id',
-            as: 'orders',
+            as: 'Orders',
         })
         OrderDetail.belongsTo(models.ProductVariants,{
             foreignKey: 'variant_id',
-            as: 'product_variants',
+            as: 'ProductVariants',
         })
     }
 

@@ -2,7 +2,7 @@
 * These are all api to get and handle with user's data
 */
 
-const {createID, encryptPW, getPublicIdFromURL} = require('../utils/functions.global');
+const {createID, encryptPW, getPublicIdFromURL, catchAndShowError} = require('../utils/functions.global');
 const {Users, UserRoles, TokenStore, Banned, ShippingAddress, NotifyUser} = require('../models/_index');
 const _express = require('express');
 const router = _express.Router();
@@ -34,7 +34,7 @@ router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, re
             }
             res.status(200).json(allUsers);
         } catch (err) {
-            console.error(err);
+            catchAndShowError(err, res)
         }
 });
 
@@ -63,7 +63,7 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
                 },
                 include: [{
                     model: ShippingAddress,
-                    as: 'shipping_address',
+                    as: 'ShippingAddress',
                     attributes: ['id', 'address', 'ward', 'city', 'country', 'zipcode', 'is_default'],
                     separate: true,
                     order: [['is_default', 'DESC']]
@@ -78,8 +78,7 @@ router.get('/api/user/get-user-by-id', authenticateAccessToken, async (req, res)
 
             return res.status(statusCode.success).json(result);
         } catch (err) {
-            console.error(chalk.red(err));
-            res.status(500).json({message: 'Error creating user, ', err});
+            catchAndShowError(err, res)
         }
 })
 
@@ -104,13 +103,10 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
 
                     const accountNameErr = err.errors.find(err => err.path === 'account_name');
                     if (accountNameErr) {
-                        res.status(404).json({message: 'This account name is already in use'});
+                        return res.status(statusCode.errorHandle).json({message: 'This account name is already in use'});
                     }
                 } else {
-                    console.error(chalk.red(err));
-                    res.status(500).json({
-                        message: 'Error creating user, ', error: err.message
-                    });
+                    catchAndShowError(err, res)
                 }
             }
 
@@ -144,8 +140,7 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
                 sendAuthResponse(res, user, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
             }
         } catch (err) {
-            console.error(chalk.red(err));
-            res.status(500).json({message: 'Error creating user, ', err});
+            catchAndShowError(err, res)
         }
     }
 );
@@ -160,10 +155,10 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
             }
         })
         if (!user) {
-            res.status(statusCode.errorHandle).json({message: 'Sign in failed! Please check your email'});
+           return  res.status(statusCode.errorHandle).json({message: 'Sign in failed! Please check your email'});
         } else {
             if (user.password !== encryptPW(req.body.password)) {
-                res.status(statusCode.errorHandle).json({message: 'Sign in failed! Invalid password'});
+                return res.status(statusCode.errorHandle).json({message: 'Sign in failed! Invalid password'});
             } else {
                 const role = await UserRoles.findOne({
                     where: {
@@ -213,8 +208,7 @@ router.post('/api/public/user-login', upload.none(), async (req, res) => {
             }
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        catchAndShowError(err, res)
     }
 })
 

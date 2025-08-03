@@ -3,20 +3,23 @@ module.exports = (sequelize, DataTypes) => {
     const Carts = sequelize.define("Carts", {
         id: {
             type: DataTypes.STRING, primaryKey: true, allowNull: false,
-        }, 
+        },
         user_id: {
             allowNull: false, type: DataTypes.STRING, references: {
                 model: "users", key: 'id',
-            }, onDelete: "CASCADE",
-        }, 
-        variant_id: {
-            type: DataTypes.STRING, allowNull: false, references: {
-                model: "product_variants", key: 'id',
-            }
+            },
+            onDelete: "CASCADE",
+            onUpdate: "CASCADE",
         },
-        image_link: {
+        variant_id: {
             type: DataTypes.STRING,
             allowNull: false,
+            references: {
+                model: "product_variants",
+                key: 'id',
+            },
+            onDelete: "CASCADE",
+            onUpdate: "CASCADE",
         },
         amount: {
             type: DataTypes.INTEGER,
@@ -29,20 +32,19 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: false,
         },
     }, {
-        tableName: 'carts', schema: 'store', hooks: {
-            beforeCreate: (carts, options) => {
-                carts.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
+        tableName: 'carts',
+        schema: 'store',
+        timestamps: true
     });
 
     Carts.associate = (models) => {
         Carts.belongsTo(models.Users, {
-            foreignKey: 'user_id', as: 'users',
+            foreignKey: 'user_id',
+            as: 'Users',
         })
         Carts.belongsTo(models.ProductVariants, {
             foreignKey: 'variant_id',
-            as: 'product_variants',
+            as: 'ProductVariants',
         });
     }
     return Carts;

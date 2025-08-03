@@ -49,11 +49,11 @@ module.exports = (sequelize, DataTypes) => {
     TokenStore.associate = (models) => {
         TokenStore.belongsTo(models.Users, {
             foreignKey: 'user_id',
-            as: 'users',
+            as: 'Users',
         })
         TokenStore.belongsTo(models.Brands, {
             foreignKey: 'user_id',
-            as: 'brands',
+            as: 'Brands',
         })
     }
 
