@@ -12,7 +12,7 @@ const _express = require('express');
 const router = _express.Router();
 
 //create a new review
-router.post('/api/user/create-review', authenticateAccessToken, upload.array('images'), async (req, res) => {
+router.post('/api/user/create-review', authenticateAccessToken, upload.array('images',1), async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {

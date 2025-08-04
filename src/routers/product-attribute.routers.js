@@ -3,13 +3,12 @@ const {ProductAttributes, ProductVariants, Products} = require('../models/_index
 const _express = require('express');
 const {authenticateAccessToken} = require("../security/JWTAuthentication");
 const chalk = require("chalk");
-const {generateID} = require("../utils/functions.global");
+const {generateID, catchAndShowError} = require("../utils/functions.global");
 const router = _express.Router();
 const statusCode = require("../utils/statusCode");
 
 //get all variant's attributes from any variant
 router.post('/api/public/get-all-variant-attributes', async (req, res) => {
-    console.log(req.body)
     try {
         const allAttributes = await ProductAttributes.findAll(
             {
@@ -18,13 +17,11 @@ router.post('/api/public/get-all-variant-attributes', async (req, res) => {
             }
         );
         if (!allAttributes) {
-            res.status(404).json({message: 'No attributes found with this id'});
+            return res.status(statusCode.success).json([]);
         }
-        console.log(allAttributes)
-        res.status(200).json(allAttributes);
+        return res.status(statusCode.success).json(allAttributes);
     } catch (err) {
-        console.error(chalk.red(err));
-        res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
+        catchAndShowError(err, res)
     }
 })
 
@@ -34,7 +31,6 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
-        console.log(req.user.id)
         try {
             const checkValid = await ProductVariants.findOne({
                 where: {
@@ -83,8 +79,7 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
 
             return res.status(statusCode.success).json({message: 'Created successfully'});
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error. Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
