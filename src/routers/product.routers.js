@@ -261,17 +261,15 @@ router.get('/api/vendor/get-all-products', authenticateAccessToken, async (req, 
             const limit = parseInt(req.query.limit) || 20
             const offset = (page - 1) * limit
 
-            console.log({limit, offset});
-
-
-            const {count, rows} = await Products.findAndCountAll({
+            const { count, rows } = await Products.findAndCountAll({
                 limit,
                 offset,
-                where: {brand_id: req.user.id},
+                where: { brand_id: req.user.id },
                 attributes: ['id', 'name', 'status'],
-            })
-
-            console.log(count, rows);
+                order: [
+                    [Sequelize.literal(`CASE WHEN status = 'OPENED' THEN 0 WHEN status = 'CLOSED' THEN 1 ELSE 2 END`), 'ASC']
+                ]
+            });
 
             return res.status(statusCode.success).json({
                 current_page: page,
@@ -426,18 +424,17 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
             if (req.body.description && req.body.description !== '') {
                 updateFields.description = req.body.description;
             }
-            if (req.body.averagePrice && req.body.averagePrice !== '') {
-                updateFields.averagePrice = req.body.averagePrice;
+            if (req.body.average_price && req.body.average_price !== '') {
+                updateFields.average_price = req.body.average_price;
             }
             if (req.body.promotion && req.body.promotion !== '') {
                 updateFields.promotion = req.body.promotion;
             }
-            if (req.body.otherVariant && req.body.otherVariant !== '') {
-                updateFields.otherVariant = req.body.otherVariant;
-            }
             if (req.body.tags && req.body.tags !== '') {
                 updateFields.tags = req.body.tags.split(",");
             }
+
+            console.log(updateFields);
 
             if (req.body.name && req.body.description && req.body.tags) {
                 updateFields.pro_tsv = Sequelize.literal(`to_tsvector('store.vn_unaccent', '${req.body.name} ${req.body.description} ${req.body.tags.split(",")}')`)
@@ -460,8 +457,7 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                         for (const image of JSON.parse(req.body["deletedImages"])) {
                             //if destroy successfully
                             const res = await destroyToCloudinary(image);
-                            console.error('error: ', res)
-                            //when destroyed, cloudinary will send a json with content: {'result':'ok}
+                            //when destroyed, cloudinary will send a JSON with content: {'result':'ok}
                             if (res.result === 'ok') {
                                 // console.log(`Image with public id: ${image["image_id"]} was deleted by vendor: ${req.user.id}`);
                                 const effectRows = await ImageProducts.destroy({

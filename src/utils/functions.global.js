@@ -12,6 +12,8 @@ function encryptPW(str) {
 }
 
 function getPublicIdFromURL(url, assetFolder) {
+    console.log(chalk.blue('url:'), url);
+    console.log(chalk.blue('assetFolder:'), assetFolder)
     const startIndex = url.lastIndexOf(assetFolder);
     return url.substring(startIndex, url.lastIndexOf('.'));
 }

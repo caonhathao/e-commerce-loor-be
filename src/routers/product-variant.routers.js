@@ -1,7 +1,7 @@
-const {ProductVariants, Products} = require('../models/_index')
+const {ProductVariants, Products, ImageProducts} = require('../models/_index')
 const _express = require('express');
 const {Op, Sequelize} = require('sequelize');
-const {generateID} = require('../utils/functions.global');
+const {generateID, catchAndShowError, getPublicIdFromURL} = require('../utils/functions.global');
 const router = _express.Router();
 
 const {authenticateAccessToken} = require('../security/JWTAuthentication')
@@ -31,8 +31,7 @@ router.get('/api/public/get-all-variants', async (req, res) => {
         }
         return res.status(statusCode.success).json(allVariants);
     } catch (e) {
-        console.log(chalk.red(e));
-        return res.status(statusCode.serverError).json({message: 'Internal server error'});
+        catchAndShowError(e, res)
     }
 })
 
@@ -65,7 +64,6 @@ router.get('/api/vendor/get-all-variants', authenticateAccessToken, async (req, 
         res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
         try {
-            console.log(req.query)
             const result = await ProductVariants.findAll({
                 where: {
                     product_id: req.query.id,
@@ -75,15 +73,9 @@ router.get('/api/vendor/get-all-variants', authenticateAccessToken, async (req, 
 
             return res.status(statusCode.success).json(result);
         } catch (e) {
-            console.log(chalk.red(e));
-            return res.status(statusCode.serverError).json({message: 'Internal server error'});
+            catchAndShowError(e, res)
         }
     }
-})
-
-//vendor get variant's information
-router.get('/api/vendor/get-variant-by-id/:id', async (req, res) => {
-
 })
 
 //vendor creates new variants
@@ -130,11 +122,18 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
 })
 
 //vendor update variant's information
-router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, upload.none(), async (req, res) => {
-    console.log(req.body)
+router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, upload.array('images', 1), async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
+
+        console.log(req.body);
+        console.log(req.files);
+
+        if (req.files.length === 0 || !req.files && req.body.deletedImages.length === 1) {
+            return res.status(statusCode.errorHandle).json({message: "Thiếu hình ảnh sản phẩm"})
+        }
+
         try {
             const updateFields = {};
 
@@ -162,13 +161,41 @@ router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, up
 
                 if (update[0] === 0) {
                     return res.status(statusCode.errorHandle).json({message: 'Update failed'});
-                } else return res.status(statusCode.success).json({message: 'Update variant successfully!'});
+                } else {
+                    //after that, update image to ImageProduct table
+                    //first, find and delete all publicID in req.body.deletedImage
+                    if (req.body.deletedImages && req.body.deletedImages.length > 0) {
+                        //if destroy successfully
+                        const publicId = getPublicIdFromURL(req.body.deletedImages, 'products');
+                        console.log(chalk.green(publicId))
+                        const res = await destroyToCloudinary(publicId);
+                        if (res.result !== 'ok') {
+                            return res.status(statusCode.errorHandle).json({message: 'Remove image failed!'});
+                        }
+                    }
+                }
             }
 
-            return res.status(statusCode.success).json({message: 'Update variant successfully!'});
+            //next, upload an image from req.body.images
+            const imageUrl = await uploadToCloudinary(req.files, process.env.CLOUD_ASSET_F_VARIANT);
+
+            if (!imageUrl) {
+                return res.status(statusCode.errorHandle).json({message: 'Upload image files failed!'});
+            } else {
+                const imageProduct = await ProductVariants.update({image_link: imageUrl.toString()}, {
+                    where: {
+                        id: req.params.id
+                    }
+                });
+
+                if (!imageProduct) {
+                    return res.status(statusCode.errorHandle).json({message: 'Upload Image failed! Please try again'});
+                }
+
+                return res.status(statusCode.success).json({message: 'Update successful!'});
+            }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
