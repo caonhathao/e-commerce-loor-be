@@ -23,9 +23,9 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 step: counting + 1
             })
             for (const child of item.list) {
-                delete ProductVariants.rawAttributes.variant_id;
-                delete ProductVariants.tableAttributes.variant_id;
-                ProductVariants.refreshAttributes();
+                // delete ProductVariants.rawAttributes.variant_id;
+                // delete ProductVariants.tableAttributes.variant_id;
+                // ProductVariants.refreshAttributes();
 
                 //check variant's exist
                 const variant = await ProductVariants.findOne({
@@ -199,29 +199,32 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
-        try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20
-            const offset = (page - 1) * limit
+        console.log(req.user.id)
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20
+        const offset = (page - 1) * limit
 
-            const {count, rows} = await Orders.findAndCountAll({
-                limit,
-                offset,
-                where: {
-                    brand_id: req.user.id,
-                },
-                attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-            })
-            return res.status(statusCode.success).json({
-                current_page: page,
-                total_items: count,
-                current_items: rows.length,
-                total_pages: Math.ceil(count / limit),
-                data: rows,
-            });
-        } catch (err) {
-            catchAndShowError(err, res);
-        }
+        const {count, rows} = await Orders.findAndCountAll({
+            limit,
+            offset,
+            where: {
+                brand_id: req.user.id,
+            },
+            attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
+            logging: console.log
+        })
+
+        return res.status(statusCode.success).json({
+            current_page: page,
+            total_items: count,
+            current_items: rows.length,
+            total_pages: Math.ceil(count / limit),
+            data: rows,
+        });
+    } catch (err) {
+        catchAndShowError(err, res);
+    }
 })
 
 router.get('/api/user/get-all-orders-by-status', authenticateAccessToken, async (req, res) => {

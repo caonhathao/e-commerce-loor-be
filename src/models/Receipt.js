@@ -1,4 +1,3 @@
-const {nanoid} = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
     const Receipt = sequelize.define('Receipt', {
         id: {
@@ -19,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
-                model: "orders",
+                model: "Orders",
                 key: 'id',
             },
         },
@@ -40,20 +39,15 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'receipt',
         timestamps: true,
         schema: 'store',
-        hooks: {
-            beforeCreate: (payment, optionst) => {
-                payment.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
     });
 
     Receipt.associate = (models) => {
         Receipt.belongsTo(models.Users, {
-            foreignKey: 'id',
+            foreignKey: 'user_id',
             as: 'Users',
         })
         Receipt.belongsTo(models.Orders, {
-            foreignKey: 'id',
+            foreignKey: 'order_id',
             as: 'Orders',
         })
     }

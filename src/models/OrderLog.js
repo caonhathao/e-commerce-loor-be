@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
-                model: 'orders',
+                model: 'Orders',
                 key: 'id',
             },
             onDelete: 'CASCADE',
@@ -24,13 +24,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         }
     }, {
-        tableName: 'order-log',
+        tableName: 'order_log',
         schema: 'store',
         timestamps: true,
     });
 
     OrderLog.associate = (models) => {
-        OrderLog.hasMany(models.Orders, {
+        OrderLog.belongsTo(models.Orders, {
             foreignKey: 'order_id',
             as: 'Orders',
         })

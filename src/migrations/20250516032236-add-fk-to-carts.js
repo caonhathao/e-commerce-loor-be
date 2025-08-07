@@ -37,7 +37,7 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-      await queryInterface.removeConstraint({ schema: 'store', tableName: 'carts' }, 'fk_carts_product_id');
+      await queryInterface.removeConstraint({ schema: 'store', tableName: 'carts' }, 'fk_carts_variant_id');
       await queryInterface.removeConstraint({ schema: 'store', tableName: 'carts' }, 'fk_carts_user_id');
   }
 };
