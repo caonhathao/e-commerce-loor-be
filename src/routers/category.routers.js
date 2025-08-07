@@ -1,19 +1,8 @@
-//these API is for category management, use them by manager role
-const _express = require('express');
-const router = _express.Router();
-const statusCode = require('../utils/statusCode');
-
-const multer = require('multer');
-const upload = multer();
-
-const {Category, SubCategory, ImageProduct} = require('../models/_index');
-const {createID, getPublicIdFromURL} = require("../utils/functions.global");
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
-const chalk = require('chalk');
-
 //GET DATA
 //get all Category
+const {router, authenticateAccessToken, statusCode, Category, catchAndShowError, upload, uploadToCloudinary, createID,
+    destroyToCloudinary, getPublicIdFromURL
+} = require("../shared/router-dependencies");
 router.get('/api/public/get-all-category', async (req, res) => {
     try {
         const allCategory = await Category.findAll();
@@ -21,9 +10,8 @@ router.get('/api/public/get-all-category', async (req, res) => {
             return res.status(404).json({message: 'Fetching data failed'});
         } else return res.status(200).json(allCategory);
     } catch (err) {
-        console.log(chalk.red('Error while handle: ', err))
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
-    }
+           catchAndShowError(err,res)
+        }
 });
 
 //POST
@@ -54,8 +42,7 @@ router.post('/api/manager/create-category', authenticateAccessToken, upload.arra
                 }
             }
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+           catchAndShowError(err,res)
         }
 })
 
@@ -111,8 +98,7 @@ router.put('/api/manager/update-category/:id', authenticateAccessToken, upload.a
             }
             return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+           catchAndShowError(err,res)
         }
 });
 
@@ -148,8 +134,7 @@ router.delete('/api/manager/delete-category/:id', authenticateAccessToken, async
                 return res.status(statusCode.success).json('Deleted successfully');
             }
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+           catchAndShowError(err,res)
         }
 })
 

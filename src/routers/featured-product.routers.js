@@ -1,16 +1,4 @@
-const _express = require('express');
-const router = _express.Router();
-const {FeaturedProduct, Product} = require('../models/_index');
-const {createID} = require("../utils/functions.global");
-const statusCode = require("../utils/statusCode");
-const express = require("express");
-const multer = require("multer");
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Sequelize} = require("sequelize");
-const {getIO} = require("../services/websocket");
-const {sendAuthResponse} = require("../utils/auth.utils");
-const chalk = require("chalk");
+const {router, statusCode, catchAndShowError, FeaturedProduct, Products} = require("../shared/router-dependencies");
 
 router.get('/api/public/get-featured-product', async (req, res) => {
     try {
@@ -26,8 +14,8 @@ router.get('/api/public/get-featured-product', async (req, res) => {
             order: [[sortBy, 'DESC']],
             attributes: {exclude: ['createdAt', 'updatedAt']},
             includes: [{
-                model: Product,
-                as: 'products',
+                model: Products,
+                as: 'Products',
 
             }]
         })
@@ -43,13 +31,11 @@ router.get('/api/public/get-featured-product', async (req, res) => {
             });
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res)
     }
 })
 
 router.post('/api/public/access-product', async (req, res) => {
-    console.log(req.query.id)
     try {
         const product_id = req.query.id;
 
@@ -60,7 +46,7 @@ router.post('/api/public/access-product', async (req, res) => {
         })
         if (!record) {
             return res.status(statusCode.errorHandle).json({message: 'Can not access this product'});
-        }else console.log(record)
+        } else console.log(record)
 
         const result = await FeaturedProduct.update(
             {
@@ -73,15 +59,13 @@ router.post('/api/public/access-product', async (req, res) => {
             }
         );
 
-
         if (!result) {
             return res.status(statusCode.errorHandle).json({message: 'Can not access this product'});
         }
         return res.status(statusCode.success).json({message: 'Access this product successfully'});
 
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res)
     }
 })
 

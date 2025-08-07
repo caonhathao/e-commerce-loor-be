@@ -42,23 +42,41 @@ module.exports = {
                 defaultValue: 0,
             },
             status: {
-                type: Sequelize.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED', 'POSTPONED', 'REFUNDED', 'COMPLETE'),
+                type: Sequelize.ENUM('  PENDING',
+                    'CONFIRMED',
+                    'PACKING',
+                    'WAITING_FOR_PICKUP',
+                    'SHIPPING',
+                    'OUT_FOR_DELIVERY',
+                    'DELIVERED',
+                    'RETURN_REQUESTED',
+                    'RETURNED',
+                    'CANCELLED',
+                    'FAILED_DELIVERY'),
                 allowNull: false,
             },
             is_review: {
                 type: Sequelize.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
-            },
+                allowNull:
+                    false,
+                defaultValue:
+                    false,
+            }
+            ,
             createdAt: {
                 allowNull: false,
-                type: Sequelize.DATE,
-                defaultValue: Sequelize.fn('NOW')
-            },
+                type:
+                Sequelize.DATE,
+                defaultValue:
+                    Sequelize.fn('NOW')
+            }
+            ,
             updatedAt: {
                 allowNull: false,
-                type: Sequelize.DATE,
-                defaultValue: Sequelize.fn('NOW')
+                type:
+                Sequelize.DATE,
+                defaultValue:
+                    Sequelize.fn('NOW')
             }
         })
     },

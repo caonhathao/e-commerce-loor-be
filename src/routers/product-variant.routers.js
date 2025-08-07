@@ -1,18 +1,13 @@
-const {ProductVariants, Products, ImageProducts} = require('../models/_index')
-const _express = require('express');
-const {Op, Sequelize} = require('sequelize');
-const {generateID, catchAndShowError, getPublicIdFromURL} = require('../utils/functions.global');
-const router = _express.Router();
-
-const {authenticateAccessToken} = require('../security/JWTAuthentication')
-const multer = require('multer');
-const {uploadToCloudinary, destroyToCloudinary} = require('../controllers/uploadController');
-const upload = multer();
-const statusCode = require("../utils/statusCode");
-const chalk = require("chalk");
-const {errorHandle} = require("../utils/statusCode");
-
 //a user gets a variant list from any product
+const {
+    router,
+    ProductVariants,
+    catchAndShowError,
+    statusCode,
+    authenticateAccessToken,
+    upload, uploadToCloudinary, destroyToCloudinary, createID
+} = require("../shared/router-dependencies");
+const {getPublicIdFromURL} = require("../utils/functions.global");
 router.get('/api/public/get-all-variants', async (req, res) => {
     try {
         delete ProductVariants.rawAttributes.variant_id;
@@ -53,8 +48,7 @@ router.get('/api/public/get-variant-by-id/:id', async (req, res) => {
         } else
             return res.status(statusCode.success).json(variant);
     } catch (e) {
-        console.log(chalk.red(e));
-        return res.status(statusCode.serverError).json({message: 'Internal server error'});
+        catchAndShowError(e, res)
     }
 })
 
@@ -99,7 +93,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
             }
 
             const newVariant = await ProductVariants.create({
-                id: generateID('VARI'),
+                id: createID('VARI'),
                 product_id: req.params.id,
                 sku: req.body.sku,
                 price: req.body.price,
@@ -115,8 +109,7 @@ router.post('/api/vendor/create-new-variant/:id', authenticateAccessToken, uploa
             }
             return res.status(statusCode.success).json({message: 'Created new variant successfully!'});
         } catch (e) {
-            console.log(chalk.red(e));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(e, res)
         }
     }
 })
@@ -126,10 +119,6 @@ router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, up
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You can not access this action'});
     } else {
-
-        console.log(req.body);
-        console.log(req.files);
-
         if (req.files.length === 0 || !req.files && req.body.deletedImages.length === 1) {
             return res.status(statusCode.errorHandle).json({message: "Thiếu hình ảnh sản phẩm"})
         }
@@ -167,7 +156,6 @@ router.put('/api/vendor/update-variant-with-id/:id', authenticateAccessToken, up
                     if (req.body.deletedImages && req.body.deletedImages.length > 0) {
                         //if destroy successfully
                         const publicId = getPublicIdFromURL(req.body.deletedImages, 'products');
-                        console.log(chalk.green(publicId))
                         const res = await destroyToCloudinary(publicId);
                         if (res.result !== 'ok') {
                             return res.status(statusCode.errorHandle).json({message: 'Remove image failed!'});
@@ -218,8 +206,7 @@ router.delete('/api/vendor/delete-variant-with-id', authenticateAccessToken, upl
             }
 
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })

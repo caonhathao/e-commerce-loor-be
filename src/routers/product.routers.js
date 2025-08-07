@@ -1,17 +1,17 @@
-const {Products, ImageProducts, ProductVariants, ProductAttributes, FeaturedProduct} = require('../models/_index');
-const {Op, Sequelize, col, fn, literal} = require('sequelize');
-const {createID, getPublicIdFromURL, generateID, catchAndShowError} = require("../utils/functions.global");
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const multer = require('multer');
-const {getIO} = require("../services/websocket");
-const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
-const chalk = require("chalk");
-const statusCode = require("../utils/statusCode");
-const upload = multer();
-const _express = require('express');
-const router = _express.Router();
-
 //get all products
+const {
+    catchAndShowError,
+    Products,
+    ImageProducts,
+    statusCode,
+    router,
+    Op,
+    authenticateAccessToken,
+    destroyToCloudinary,
+    chalk,
+    createID, ProductVariants, ProductAttributes, FeaturedProduct, Sequelize, uploadToCloudinary, upload
+} = require("../shared/router-dependencies");
+const {getPublicIdFromURL} = require("../utils/functions.global");
 router.get('/api/public/get-all-products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -77,7 +77,7 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
                 status: "OPENED"
             },
             include: [{
-                model: ImageProduct,
+                model: ImageProducts,
                 as: "image_products",
                 required: false,
                 attributes: {exclude: ['product_id']}
@@ -94,8 +94,8 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
             data: rows,
         });
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res);
+
     }
 })
 
@@ -127,7 +127,7 @@ router.get('/api/public/get-all-products-by-filter', async (req, res) => {
                 where: whereClause,
                 attributes: {exclude: ['pro_tsv', 'tags', 'other_variant', 'createdAt', 'updatedAt']},
                 include: [{
-                    model: ImageProduct, as: "image_products", attributes: {exclude: ['product_id']}
+                    model: ImageProducts, as: "image_products", attributes: {exclude: ['product_id']}
                 }],
             }
         )
@@ -145,8 +145,8 @@ router.get('/api/public/get-all-products-by-filter', async (req, res) => {
         }
 
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res);
+
     }
 })
 
@@ -181,10 +181,9 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
             return res.status(statusCode.errorHandle).json({message: "No product found with this id"});
         }
 
-        res.status(statusCode.success).json(product);
+        return res.status(statusCode.success).json(product);
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+
     }
 })
 
@@ -216,8 +215,8 @@ router.get('/api/public/get-product-by-price', async (req, res) => {
             });
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res);
+
     }
 });
 
@@ -261,10 +260,10 @@ router.get('/api/vendor/get-all-products', authenticateAccessToken, async (req, 
             const limit = parseInt(req.query.limit) || 20
             const offset = (page - 1) * limit
 
-            const { count, rows } = await Products.findAndCountAll({
+            const {count, rows} = await Products.findAndCountAll({
                 limit,
                 offset,
-                where: { brand_id: req.user.id },
+                where: {brand_id: req.user.id},
                 attributes: ['id', 'name', 'status'],
                 order: [
                     [Sequelize.literal(`CASE WHEN status = 'OPENED' THEN 0 WHEN status = 'CLOSED' THEN 1 ELSE 2 END`), 'ASC']
@@ -319,7 +318,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                 res.status(statusCode.errorHandle).json({message: 'Can not found image files!'});
             } else {
                 const newProduct = await Products.create({
-                    id: generateID('PROD'),
+                    id: createID('PROD'),
                     category_id: req.body.category_id,
                     subcategory_id: req.body.subCategory_id,
                     brand_id: req.user.id,
@@ -347,7 +346,7 @@ router.post('/api/vendor/create-products', authenticateAccessToken, upload.array
                         return res.status(statusCode.errorHandle).json({message: 'Upload image files failed!'});
                     } else {
                         const imageProduct = imageUrl.map((item) => {
-                            ImageProduct.create({
+                            ImageProducts.create({
                                 id: createID('IMG'),
                                 image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_PROD),
                                 product_id: newProduct.id,
@@ -478,7 +477,7 @@ router.put('/api/vendor/update-product/:id', authenticateAccessToken, upload.arr
                 } else {
                     const imageProduct = imageUrl.map((item) => {
                         ImageProducts.create({
-                            id: generateID('IMG'),
+                            id: createID('IMG'),
                             image_id: getPublicIdFromURL(item, process.env.CLOUD_ASSET_F_PROD),
                             product_id: req.body.id,
                             image_link: item,

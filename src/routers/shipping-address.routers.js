@@ -1,16 +1,8 @@
-const {createID} = require('../utils/functions.global');
-
-const _express = require('express');
-const router = _express.Router();
-
-const multer = require('multer');
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const chalk = require("chalk");
-const statusCode = require('../utils/statusCode');
-const {ShippingAddress, Provinces, Districts} = require("../models/_index");
-
 //get all addresses
+const {
+    authenticateAccessToken, statusCode, router, ShippingAddress, catchAndShowError, upload, Provinces, Districts,
+    createID
+} = require("../shared/router-dependencies");
 router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'Access denied!'});
@@ -29,8 +21,7 @@ router.get('/api/user/get-all-address', authenticateAccessToken, async (req, res
             }
             return res.status(statusCode.success).json(result);
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -46,7 +37,6 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                     id: req.body.city,
                 },
             })
-            console.log(cityExist)
 
             const wardExist = await Districts.findOne({
                 where: {
@@ -54,7 +44,6 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                     id: req.body.ward,
                 },
             })
-            console.log(wardExist)
 
             let update
             if (req.body.is_default) {
@@ -84,8 +73,7 @@ router.post('/api/user/add-shipping-address', authenticateAccessToken, upload.no
                 return res.status(statusCode.success).json('Added address successfully');
             }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -124,8 +112,7 @@ router.put('/api/user/update-shipping-address', authenticateAccessToken, upload.
             }
             return res.status(statusCode.success).json('Update   address successfully');
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -145,8 +132,7 @@ router.delete('/api/user/remove-shipping-address', authenticateAccessToken, asyn
             if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Remove address failed! Please try again later'});
             return res.status(statusCode.success).json('Remove address successfully');
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 module.exports = router;

@@ -1,15 +1,14 @@
-const _express = require('express');
-const router = _express.Router();
-const {OrderDetail, Orders, ProductVariants} = require('../models/_index');
-const statusCode = require("../utils/statusCode");
-const multer = require("multer");
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const chalk = require("chalk");
-const {where} = require("sequelize");
-const {catchAndShowError} = require("../utils/functions.global");
-
 //get: get all orders from any customer
 //get order detail
+const {
+    router,
+    catchAndShowError,
+    authenticateAccessToken,
+    OrderDetail,
+    Orders,
+    ProductVariants,
+    statusCode
+} = require("../shared/router-dependencies");
 router.get('/api/user/get-order-detail/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER' && req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});

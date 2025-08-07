@@ -27,35 +27,105 @@ const systemNotify = {
             redirect_url:"ORDER_DETAIL"
         }
     },
-    PREPARING: {
+    PACKING: {
         user_content: {
-            title: "Đơn hàng đang được chuẩn bị",
-            content: "Đơn hàng ${id} của bạn đang được nhà bán hàng chuẩn bị.",
+            title: "Đơn hàng đang được đóng gói",
+            content: "Đơn hàng ${id} của bạn đang được đóng gói bởi nhà bán hàng.",
             type: "NOTICE",
             redirect_url:"ORDER_DETAIL"
         },
         vendor_content: {
-            title: "Đơn hàng đang được chuẩn bị",
-            content: "Bạn đang chuẩn bị đơn hàng ${id}. Hãy đảm bảo đúng sản phẩm và chất lượng.",
+            title: "Bạn đang đóng gói đơn hàng",
+            content: "Hãy đảm bảo đơn hàng ${id} được đóng gói cẩn thận để giao đúng hẹn.",
             type: "NOTICE",
             redirect_url:"ORDER_DETAIL"
         }
     },
-    DELIVERING: {
+    WAITING_FOR_PICKUP: {
         user_content: {
-            title: "Đơn hàng đang được giao",
-            content: "Đơn hàng ${id} của bạn đang được vận chuyển đến địa chỉ nhận.",
+            title: "Đơn hàng sắp được giao",
+            content: "Đơn hàng ${id} của bạn đã sẵn sàng và đang chờ đơn vị vận chuyển đến lấy.",
+            type: "INFO",
+            redirect_url:"ORDER_DETAIL"
+        },
+        vendor_content: {
+            title: "Chờ đơn vị vận chuyển",
+            content: "Đơn hàng ${id} đang chờ đơn vị vận chuyển đến lấy hàng.",
+            type: "INFO",
+            redirect_url:"ORDER_DETAIL"
+        }
+    },
+    SHIPPING: {
+        user_content: {
+            title: "Đơn hàng đang được vận chuyển",
+            content: "Đơn hàng ${id} của bạn đang trên đường vận chuyển.",
             type: "NOTICE",
             redirect_url:"ORDER_DETAIL"
         },
         vendor_content: {
-            title: "Đơn hàng đang được giao",
-            content: "Đơn hàng ${id} đã được chuyển cho đơn vị vận chuyển.",
+            title: "Đơn hàng đã rời kho",
+            content: "Đơn hàng ${id} đã rời kho và đang được giao đến khách hàng.",
             type: "NOTICE",
             redirect_url:"ORDER_DETAIL"
         }
     },
-    CANCELED: {
+    OUT_FOR_DELIVERY: {
+        user_content: {
+            title: "Đơn hàng sắp đến",
+            content: "Đơn hàng ${id} của bạn đang trên xe giao hàng. Hãy chuẩn bị nhận hàng!",
+            type: "INFO",
+            redirect_url:"ORDER_DETAIL"
+        },
+        vendor_content: {
+            title: "Đơn hàng đang được giao",
+            content: "Đơn hàng ${id} đang được giao đến người mua.",
+            type: "INFO",
+            redirect_url:"ORDER_DETAIL"
+        }
+    },
+    DELIVERED: {
+        user_content: {
+            title: "Đơn hàng đã được giao thành công",
+            content: "Đơn hàng ${id} của bạn đã được giao đến nơi. Cảm ơn bạn đã mua sắm!",
+            type: "SUCCESS",
+            redirect_url:"ORDER_REVIEW"
+        },
+        vendor_content: {
+            title: "Đơn hàng đã giao thành công",
+            content: "Đơn hàng ${id} đã được giao đến khách hàng thành công.",
+            type: "SUCCESS",
+            redirect_url:"ORDER_REVIEW"
+        }
+    },
+    RETURN_REQUESTED: {
+        user_content: {
+            title: "Bạn đã yêu cầu trả hàng",
+            content: "Yêu cầu trả hàng cho đơn hàng ${id} đã được gửi. Chúng tôi sẽ xử lý sớm nhất.",
+            type: "WARNING",
+            redirect_url:"ORDER_DETAIL"
+        },
+        vendor_content: {
+            title: "Khách hàng yêu cầu trả hàng",
+            content: "Đơn hàng ${id} đã có yêu cầu trả hàng từ khách hàng.",
+            type: "WARNING",
+            redirect_url:"ORDER_DETAIL"
+        }
+    },
+    RETURNED: {
+        user_content: {
+            title: "Đơn hàng đã được trả lại",
+            content: "Đơn hàng ${id} đã được trả lại thành công. Cảm ơn bạn đã sử dụng dịch vụ.",
+            type: "NOTICE",
+            redirect_url:"ORDER_DETAIL"
+        },
+        vendor_content: {
+            title: "Đơn hàng đã được hoàn trả",
+            content: "Đơn hàng ${id} đã được trả lại từ khách hàng.",
+            type: "NOTICE",
+            redirect_url:"ORDER_DETAIL"
+        }
+    },
+    CANCELLED: {
         user_content: {
             title: "Đơn hàng đã bị huỷ",
             content: "Đơn hàng ${id} của bạn đã bị huỷ. Nếu có thắc mắc, vui lòng liên hệ hỗ trợ.",
@@ -69,61 +139,20 @@ const systemNotify = {
             redirect_url:"ORDER_DETAIL"
         }
     },
-    ABORTED: {
+    FAILED_DELIVERY: {
         user_content: {
-            title: "Đơn hàng bị huỷ bởi hệ thống",
-            content: "Đơn hàng ${id} đã bị huỷ do sự cố hệ thống hoặc vi phạm chính sách.",
+            title: "Giao hàng thất bại",
+            content: "Đơn hàng ${id} không thể giao thành công. Vui lòng kiểm tra lại thông tin giao hàng.",
             type: "ERROR",
             redirect_url:"ORDER_DETAIL"
         },
         vendor_content: {
-            title: "Đơn hàng bị huỷ",
-            content: "Đơn hàng ${id} đã bị hệ thống huỷ bỏ. Vui lòng kiểm tra lý do cụ thể.",
+            title: "Đơn hàng giao thất bại",
+            content: "Đơn hàng ${id} đã không được giao thành công. Vui lòng liên hệ đơn vị vận chuyển.",
             type: "ERROR",
             redirect_url:"ORDER_DETAIL"
-        }
-    },
-    POSTPONED: {
-        user_content: {
-            title: "Đơn hàng đã bị hoãn",
-            content: "Đơn hàng ${id} của bạn đã bị hoãn lại. Chúng tôi sẽ cập nhật khi có thông tin mới.",
-            type: "INFO",
-            redirect_url:"ORDER_DETAIL"
-        },
-        vendor_content: {
-            title: "Đơn hàng đã bị hoãn",
-            content: "Đơn hàng ${id} đã bị hoãn do điều kiện phát sinh.",
-            type: "INFO",
-            redirect_url:"ORDER_DETAIL"
-        }
-    },
-    REFUNDED: {
-        user_content: {
-            title: "Đơn hàng đã được hoàn tiền",
-            content: "Bạn đã được hoàn tiền cho đơn hàng ${id}. Số tiền sẽ sớm được chuyển về tài khoản.",
-            type: "NOTICE",
-            redirect_url:"ORDER_DETAIL"
-        },
-        vendor_content: {
-            title: "Đơn hàng đã hoàn tiền",
-            content: "Bạn đã hoàn tiền cho đơn hàng ${id}.",
-            type: "NOTICE",
-            redirect_url:"ORDER_DETAIL"
-        }
-    },
-    COMPLETE: {
-        user_content: {
-            title: "Đơn hàng đã hoàn tất",
-            content: "Đơn hàng ${id} của bạn đã hoàn tất. Cảm ơn bạn đã mua sắm tại hệ thống.",
-            type: "SUCCESS",
-            redirect_url:"ORDER_REVIEW"
-        },
-        vendor_content: {
-            title: "Đơn hàng đã hoàn tất",
-            content: "Đơn hàng ${id} đã được giao thành công và hoàn tất.",
-            type: "SUCCESS",
-            redirect_url:"ORDER_REVIEW"
         }
     }
 };
+
 module.exports = systemNotify;

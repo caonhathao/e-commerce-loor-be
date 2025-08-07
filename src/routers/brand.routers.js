@@ -1,23 +1,11 @@
 /*these are all api to get and handle with brand */
-const {createID, encryptPW} = require('../utils/functions.global');
-
-const {Brands} = require('../models/_index');
-const express = require("express");
-const {generateRefreshToken, generateAccessToken} = require("../security/JWTProvider");
-const router = express.Router();
-
-const multer = require("multer");
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Sequelize} = require("sequelize");
-const {getIO} = require("../services/websocket");
-const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
-const {sendAuthResponse} = require("../utils/auth.utils");
-const chalk = require("chalk");
-const statusCode = require("../utils/statusCode");
-const {uploadToCloudinary} = require("../controllers/uploadController");
-
 //post: sign-in and sign-up
+const {
+    router, upload, Brands, statusCode, encryptPW, ValidateToken, generateRefreshToken, TokenUpdate,
+    generateAccessToken, sendAuthResponse, TokenTracking, catchAndShowError, createID, TokenStore, Products, Op,
+    Sequelize, getIO, uploadToCloudinary
+} = require("../shared/router-dependencies");
+const {authenticateAccessToken} = require("../security/JWTAuthentication");
 router.post('/api/public/brand-login', upload.none(), async (req, res) => {
     // console.log(req.body)
     try {
@@ -28,10 +16,10 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
         });
 
         if (!brand) {
-            res.status(404).json({message: 'Sign in failed! Please check your email'});
+            return res.status(statusCode.errorHandle).json({message: 'Sign in failed! Please check your email'});
         } else {
             if (brand.password !== encryptPW(req.body.password)) {
-                res.status(404).json({message: 'Sign in failed! Invalid password'});
+                return res.status(statusCode.errorHandle).json({message: 'Sign in failed! Invalid password'});
             } else {
                 const payload = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked, name: brand.name};
                 const brandData = {id: brand.id, role: 'ROLE_VENDOR', locked: brand.is_locked, name: brand.name};
@@ -49,7 +37,7 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
                         timer: process.env.EXPIRE_IN_WEEK,
                     });
                     if (!response) {
-                        res.status(401).json({message: 'Sign in failed! Can not generate token'});
+                        return res.status(statusCode.missingModule).json({message: 'Sign in failed! Can not generate token'});
                     } else {
                         accessToken = generateAccessToken(payload, process.env.EXPIRE_IN_DAY);
                         sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
@@ -70,8 +58,7 @@ router.post('/api/public/brand-login', upload.none(), async (req, res) => {
             }
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        catchAndShowError(err, res);
     }
 });
 
@@ -94,15 +81,15 @@ router.post('/api/public/create-brand', upload.none(), async (req, res) => {
             if (err.name === 'SequelizeUniqueConstraintError') {
                 const emailErr = err.errors.find(err => err.path === 'email');
                 if (emailErr) {
-                    res.status(404).json({message: 'This email is already in use'});
+                    return res.status(statusCode.errorHandle).json({message: 'This email is already in use'});
                 }
                 const nameErr = err.errors.find(err => err.path === 'name');
                 if (nameErr) {
-                    res.status(404).json({message: 'This brand name is already in use'});
+                    res.status(statusCode.errorHandle).json({message: 'This brand name is already in use'});
                 }
             } else {
                 console.error(err);
-                res.status(500).json({
+                return res.status(statusCode.serverError).json({
                     message: 'Error creating brand, ', error: err.message
                 });
             }
@@ -124,8 +111,7 @@ router.post('/api/public/create-brand', upload.none(), async (req, res) => {
         sendAuthResponse(res, brandData, payload, process.env.EXPIRE_IN_WEEK, accessToken, refreshToken)
 
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        catchAndShowError(err, res);
     }
 });
 
@@ -148,8 +134,7 @@ router.post('/api/vendor/logout', authenticateAccessToken, async (req, res) => {
             else
                 return res.status(statusCode.success).json({message: 'Logout successfully'});
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 })
 
@@ -163,13 +148,12 @@ router.post('/api/system/authentication/:id', authenticateAccessToken, async (re
             })
 
             if (!record) {
-                res.status(404).json({message: 'No brand with this id'});
+                return res.status(statusCode.errorHandle).json({message: 'No brand with this id'});
             }
-            res.status(200).json({message: 'Authentication successful'});
+            return res.status(statusCode.success).json({message: 'Authentication successful'});
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        catchAndShowError(err, res);
     }
 })
 
@@ -189,8 +173,7 @@ router.get('/api/public/get-brand-by-id/:id', authenticateAccessToken, async (re
                 return res.status(statusCode.success).json(brand);
             }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 });
 
@@ -210,8 +193,7 @@ router.get('/api/brand/get-profile', authenticateAccessToken, async (req, res) =
                 return res.status(statusCode.success).json(brand);
             }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 });
 
@@ -224,8 +206,7 @@ router.get('/api/manager/get-all-brands', authenticateAccessToken, async (req, r
             const allBrands = await Brands.findAll();
             res.json(allBrands);
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+            catchAndShowError(err, res);
         }
 })
 
@@ -234,7 +215,7 @@ router.get('/api/manager/get-all-brands', authenticateAccessToken, async (req, r
 router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
     try {
         const key = req.params.k.toLowerCase();
-        const results = await products.findAll({
+        const results = await Products.findAll({
             where: {
                 [Op.and]: [
                     Sequelize.literal(`pro_tsv @@ plainto_tsquery('vn_unaccent', '${key}')`),
@@ -243,15 +224,14 @@ router.get('/api/get-product-by-key/:id/:k', async (req, res) => {
             },
         })
 
-        if (!results) res.status(404).json({message: 'No product found with keyword'});
+        if (!results) return res.status(statusCode.errorHandle).json({message: 'No product found with keyword'});
         else {
             const io = getIO();
             io.emit('search-product', results);
             res.status(200).json('Search successfully!');
         }
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+        catchAndShowError(err, res);
     }
 })
 
@@ -303,8 +283,7 @@ router.put('/api/vendor/brand-update', authenticateAccessToken, upload.array("im
             }
             return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+            catchAndShowError(err, res);
         }
 })
 
@@ -335,8 +314,7 @@ router.put('/api/vendor/change-password', authenticateAccessToken, upload.none()
                 return res.status(statusCode.success).json('Updated successfully');
             }
         } catch (e) {
-            console.log(chalk.red(e));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'})
+            catchAndShowError(e, res);
         }
     }
 })
@@ -344,15 +322,15 @@ router.put('/api/vendor/change-password', authenticateAccessToken, upload.none()
 //put:lock brand
 router.put('/api/system/lock-brand-by-id/:id', async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.errorHandle).json({message: 'Access token is invalid'});
     } else
         try {
             await Brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
-            res.status(200).json('Banned successfully');
+            return res.status(statusCode.success).json('Banned successfully');
 
         } catch (err) {
-            res.status(500).json({message: 'error: ', error: err.message});
+            catchAndShowError(err, res);
         }
 })
 
@@ -361,30 +339,30 @@ router.put('/api/manager/lock-brand-by-id/:id', authenticateAccessToken, async (
         const brand = await Brands.update({is_locked: true,}, {where: {id: req.params.id}});
 
         if (!brand) {
-            res.status(404).json({message: 'No brand with this id'});
+            return res.status(statusCode.errorHandle).json({message: 'No brand with this id'});
         }
-        res.status(200).json('successfully');
+        return res.status(statusCode.success).json('successfully');
 
     } catch (err) {
-        res.status(500).json({message: 'error: ', error: err.message});
+        catchAndShowError(err, res);
     }
 })
 
 //put: restore brand
 router.put('/api/restore-brand-by-id/:id', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
-        res.status(404).json({message: 'Access token is invalid'});
+        return res.status(statusCode.errorHandle).json({message: 'Access token is invalid'});
     } else
         try {
             const brand = await Brands.update({is_locked: false,}, {where: {id: req.params.id}});
 
             if (!brand) {
-                res.status(404).json({message: 'No user with this id'});
+                return res.status(statusCode.errorHandle).json({message: 'No user with this id'});
             }
-            res.status(200).json('successfully');
+            return res.status(statusCode.success).json('successfully');
 
         } catch (err) {
-            res.status(500).json({message: 'error: ', error: err.message});
+            catchAndShowError(err, res)
         }
 })
 
