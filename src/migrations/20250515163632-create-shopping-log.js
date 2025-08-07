@@ -12,10 +12,6 @@ await queryInterface.createTable({schema: 'store', tableName: 'shopping_log'}, {
   user_id: {
     type: Sequelize.STRING,
     allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id',
-    }
   },
   order_id: {
     type: Sequelize.STRING,

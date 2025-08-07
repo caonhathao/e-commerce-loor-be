@@ -3,15 +3,16 @@ const {
     catchAndShowError,
     Products,
     ImageProducts,
+    Brands,
     statusCode,
     router,
     Op,
     authenticateAccessToken,
     destroyToCloudinary,
-    chalk,
+    getPublicIdFromURL,
     createID, ProductVariants, ProductAttributes, FeaturedProduct, Sequelize, uploadToCloudinary, upload
 } = require("../shared/router-dependencies");
-const {getPublicIdFromURL} = require("../utils/functions.global");
+
 router.get('/api/public/get-all-products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -165,7 +166,7 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
                 {
                     model: ProductVariants,
                     as: "ProductVariants",
-                    attributes: ['id', 'name', 'price', 'sku'],
+                    attributes: ['id', 'name', 'price', 'sku', 'image_link'],
                     include: [{
                         model: ProductAttributes,
                         as: "ProductAttributes",
@@ -173,7 +174,14 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
                     }]
                 },
                 {
-                    model: FeaturedProduct, as: "FeaturedProduct", attributes: ['product_wishlist'],
+                    model: FeaturedProduct,
+                    as: "FeaturedProduct",
+                    attributes: ['product_wishlist'],
+                },
+                {
+                    model: Brands,
+                    as: "Brands",
+                    attributes: ['name', 'image_link'],
                 }
             ],
         });
@@ -183,7 +191,7 @@ router.get('/api/public/get-product-by-id/:id', async (req, res) => {
 
         return res.status(statusCode.success).json(product);
     } catch (err) {
-
+        catchAndShowError(err, res);
     }
 })
 

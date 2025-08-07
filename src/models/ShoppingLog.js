@@ -1,5 +1,3 @@
-const {nanoid} = require("nanoid");
-
 module.exports = (sequelize, DataTypes) => {
     const ShoppingLog = sequelize.define('ShoppingLog', {
         id: {
@@ -11,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
-                model: 'users',
+                model: 'Users',
                 key: 'id',
             }
         },
@@ -19,18 +17,13 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        total:{
+        total: {
             type: DataTypes.INTEGER,
             allowNull: false,
         }
-    },{
+    }, {
         tableName: 'shopping_log',
-        schema: 'store',
-        hooks: {
-            beforeCreate: (ShoppingLog, options) => {
-                ShoppingLog.id = nanoid(10); // sinh chuỗi mặc định dài 21 ký tự
-            }
-        }
+        schema: 'store'
     })
     return ShoppingLog;
 }

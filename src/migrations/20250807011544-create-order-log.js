@@ -12,12 +12,6 @@ module.exports = {
             order_id: {
                 type: Sequelize.STRING,
                 allowNull: false,
-                references: {
-                    model: 'orders',
-                    key: 'id',
-                },
-                onDelete: 'CASCADE',
-                onUpdate: 'CASCADE',
             },
             status: {
                 type: Sequelize.STRING,

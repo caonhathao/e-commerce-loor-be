@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
-                model: 'orders',
+                model: 'Orders',
                 key: 'id',
             },
             onDelete: 'CASCADE',
@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             references: {
-                model: 'product_variants',
+                model: 'ProductVariants',
                 key: 'id',
             }
         },
