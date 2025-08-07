@@ -1,28 +1,9 @@
-const _express = require('express');
-const router = _express.Router();
-const {
-    Orders,
-    OrderDetail,
-    NotifyBrand,
-    NotifyUser,
-    Products,
-    ProductVariants,
-    Receipt,
-    Brands
-} = require('../models/_index');
-const {createID, formatTemplate, catchAndShowError} = require("../utils/functions.global");
-const statusCode = require("../utils/statusCode");
-const express = require("express");
-const multer = require("multer");
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Sequelize, Op, literal} = require("sequelize");
-const {getIO} = require("../services/websocket");
-const {sendAuthResponse} = require("../utils/auth.utils");
-const chalk = require("chalk");
-const systemNotify = require('../utils/system-notify.utils')
-
 //post: create new order
+const {
+    router, authenticateAccessToken, ProductVariants, statusCode, Products, literal, chalk, Orders, createID,
+    Receipt, OrderDetail, NotifyBrand, NotifyUser, getIO, Op, systemNotify, formatTemplate, catchAndShowError, OrderLog
+} = require("../shared/router-dependencies");
+
 router.post('/api/user/create-new-order', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
@@ -116,7 +97,14 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 address: req.body.address,
             })
 
-            console.log('New order:', newOrder)
+            await OrderLog.create({
+                id: createID('ORD-LOG'),
+                order_id: id,
+                status: 'PENDING',
+                type: "SENDER"
+            })
+
+            // console.log('New order:', newOrder)
 
             if (!newOrder) {
                 return res.status(statusCode.errorHandle).json({message: 'Creating order failed'});
@@ -202,8 +190,8 @@ router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res)
                 data: rows,
             });
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
+
         }
 })
 
@@ -232,8 +220,7 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
                 data: rows,
             });
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 })
 
@@ -371,8 +358,7 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
                 data: rows,
             });
         } catch (e) {
-            console.log(chalk.red(e));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(e, res);
         }
     }
 })
@@ -440,9 +426,95 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
                 return res.status(statusCode.errorHandle).json({message: 'Cập nhật thất bại'});
             }
 
-            const newNotify = await NotifyUser.create({
+            await OrderLog.create({
+                id: createID('ORD-LOG'),
+                order_id: req.body.id,
+                status: req.body.status,
+                type: "SENDER"
+            })
+
+            await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: check.user_id,
+                title: systemNotify[req.body.status].user_content.title,
+                content: formatTemplate(systemNotify[req.body.status].user_content.content, {id: req.body.id}),
+                redirect_url: `/order-detail/${req.body.id}`,
+                type: systemNotify[req.body.status].type,
+                status: "IDLE",
+            })
+
+            await NotifyBrand.create({
+                id: createID('NOT-BRA'),
+                user_id: req.user.id,
+                title: systemNotify[req.body.status].vendor_content.title,
+                content: formatTemplate(systemNotify[req.body.status].vendor_content.content, {id: req.body.id}),
+                redirect_url: `/order-detail/${req.body.id}`,
+                type: systemNotify[req.body.status].type,
+                status: "IDLE",
+            })
+
+            io.to(`room_${req.user.id}`).emit('update_status_order', {
+                message: `/order-detail/${req.body.id}`,
+            })
+
+            io.to(`room_${check.user_id}`).emit('update_status_order', {
+                message: `/order-detail/${req.body.id}`,
+            })
+
+            return res.status(statusCode.success).json({message: 'Cập nhật thành công'});
+        } catch (err) {
+            catchAndShowError(err, res);
+        }
+})
+
+router.put('/api/user/update-status-order', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else
+        try {
+            const io = getIO();
+
+            const check = await Orders.findOne({
+                where: {
+                    id: req.body.id,
+                    user_id: req.user.id,
+                }
+            })
+
+            if (!check) {
+                return res.status(statusCode.errorHandle).json({message: 'Đơn hàng không tồn tại!'});
+            }
+
+            const result = await Orders.update({
+                    status: req.body.status,
+                }, {
+                    where: {id: req.body.id}
+                }
+            )
+            if (result === 0 || !result) {
+                return res.status(statusCode.errorHandle).json({message: 'Cập nhật thất bại'});
+            }
+
+            await OrderLog.create({
+                id: createID('ORD-LOG'),
+                order_id: req.body.id,
+                status: req.body.status,
+                type: "RECEIVER"
+            })
+
+            await NotifyBrand.create({
+                id: createID('NOT-BRA'),
+                brand_id: check.brand_id,
+                title: systemNotify[req.body.status].vendor_content.title,
+                content: formatTemplate(systemNotify[req.body.status].vendor_content.content, {id: req.body.id}),
+                redirect_url: `/order-detail/${req.body.id}`,
+                type: systemNotify[req.body.status].type,
+                status: "IDLE",
+            })
+
+            await NotifyUser.create({
+                id: createID('NOT-BRA'),
+                brand_id: check.user_id,
                 title: systemNotify[req.body.status].user_content.title,
                 content: formatTemplate(systemNotify[req.body.status].user_content.content, {id: req.body.id}),
                 redirect_url: `/order-detail/${req.body.id}`,
@@ -454,11 +526,15 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
                 message: `/order-detail/${req.body.id}`,
             })
 
+            io.to(`room_${check.brand_id}`).emit('update_status_order', {
+                message: `/order-detail/${req.body.id}`,
+            })
+
             return res.status(statusCode.success).json({message: 'Cập nhật thành công'});
 
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
+
         }
 })
 
@@ -503,10 +579,8 @@ router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, re
                 }
             })
             return res.status(statusCode.success).json({message: 'Deleted successfully'});
-        } catch
-            (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        } catch (err) {
+            catchAndShowError(err, res);
         }
 })
 module.exports = router;

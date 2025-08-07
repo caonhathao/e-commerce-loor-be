@@ -1,15 +1,8 @@
-const _express = require('express');
-const router = _express.Router();
-const {SubCategory, Category} = require('../models/_index');
-const {createID, getPublicIdFromURL} = require('../utils/functions.global');
-const multer = require('multer');
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const statusCode = require("../utils/statusCode");
-const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
-const upload = multer();
-const chalk = require('chalk');
-
 //Get all subcategories from any parent-category with category_id:
+const {
+    router, statusCode, SubCategory, catchAndShowError, authenticateAccessToken, upload, uploadToCloudinary,
+    createID, destroyToCloudinary, getPublicIdFromURL
+} = require("../shared/router-dependencies");
 router.get('/api/public/get-all-sub-from-category/:id', async (req, res) => {
     try {
         const result = await SubCategory.findAll({
@@ -21,11 +14,11 @@ router.get('/api/public/get-all-sub-from-category/:id', async (req, res) => {
             return res.status(statusCode.errorHandle).json('Fetch data failed! No category found!');
         } else return res.status(statusCode.success).json(result);
     } catch (err) {
-        console.error(err);
+        catchAndShowError(err, res)
     }
 })
 
-//Get any sub category's info
+//Get any subcategory's info
 router.get('/api/public/get-sub-category/:id', async (req, res) => {
     try {
         const result = await SubCategory.findOne({
@@ -37,7 +30,7 @@ router.get('/api/public/get-sub-category/:id', async (req, res) => {
             return res.status(statusCode.errorHandle).json('Fetch data failed! No category found!');
         } else return res.status(statusCode.success).json(result);
     } catch (err) {
-        console.error(err);
+        catchAndShowError(err, res)
     }
 })
 
@@ -65,15 +58,14 @@ router.post('/api/manager/create-sub-category', authenticateAccessToken, upload.
                         image_link: imageUrl.toString()
                     });
                     if (!sub) {
-                       return res.status(statusCode.errorHandle).json('Creating failed!');
+                        return res.status(statusCode.errorHandle).json('Creating failed!');
                     }
                     return res.status(statusCode.success).json('Created successfully');
                 }
                 return res.status(statusCode.success).json('Created sub category successfully!' + req.body.name);
             }
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -132,8 +124,7 @@ router.put('/api/manager/update-sub-category/:id', authenticateAccessToken, uplo
             }
             return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -170,8 +161,7 @@ router.delete('/api/manager/delete-sub-category/:id', authenticateAccessToken, a
                 return res.status(statusCode.success).json('Deleted successfully');
             }
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 module.exports = router;

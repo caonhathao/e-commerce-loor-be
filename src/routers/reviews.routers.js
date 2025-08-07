@@ -1,17 +1,7 @@
-const {Reviews, ProductVariants, ImageReviews, Orders, NotifyBrand} = require('../models/_index');
-const {Op, Sequelize, col, fn, literal} = require('sequelize');
-const {createID, getPublicIdFromURL, generateID, catchAndShowError} = require("../utils/functions.global");
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const multer = require('multer');
-const {getIO} = require("../services/websocket");
-const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
-const chalk = require("chalk");
-const statusCode = require("../utils/statusCode");
-const upload = multer();
-const _express = require('express');
-const router = _express.Router();
-
 //create a new review
+const {router, authenticateAccessToken, upload, statusCode, ProductVariants, createID, Reviews, uploadToCloudinary,
+    ImageReviews, catchAndShowError, Sequelize
+} = require("../shared/router-dependencies");
 router.post('/api/user/create-review', authenticateAccessToken, upload.array('images',1), async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
@@ -72,8 +62,6 @@ router.get('/api/public/get-all-review', async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const page = parseInt(req.query.page) || 1;
         const offset = (page - 1) * limit;
-
-        console.log(req.query.id)
 
         const reviewHasImage = await Reviews.count({
             where: {

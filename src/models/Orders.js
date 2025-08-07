@@ -38,7 +38,17 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 0,
         },
         status: {
-            type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'CANCELED', 'ABORTED', 'POSTPONED', 'REFUNDED', 'COMPLETE'),
+            type: DataTypes.ENUM('  PENDING',
+                'CONFIRMED',
+                'PACKING',
+                'WAITING_FOR_PICKUP',
+                'SHIPPING',
+                'OUT_FOR_DELIVERY',
+                'DELIVERED',
+                'RETURN_REQUESTED',
+                'RETURNED',
+                'CANCELLED',
+                'FAILED_DELIVERY'),
             allowNull: false,
         },
         is_review: {

@@ -1,24 +1,8 @@
-/*
-* These are all api to get and handle with user's data
-*/
-
-const {createID, encryptPW, getPublicIdFromURL, catchAndShowError} = require('../utils/functions.global');
-const {Users, UserRoles, TokenStore, Banned, ShippingAddress, NotifyUser} = require('../models/_index');
-const _express = require('express');
-const router = _express.Router();
-const multer = require('multer');
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
-const authUtils = require('../utils/auth.utils')
-const {sendAuthResponse} = require("../utils/auth.utils");
-const {TokenTracking, TokenUpdate, ValidateToken} = require("../security/TokenTracking");
-const chalk = require("chalk");
-const statusCode = require('../utils/statusCode');
-const {uploadToCloudinary, destroyToCloudinary} = require("../controllers/uploadController");
-const {literal} = require("sequelize");
-
 //get user(s)
+const {authenticateAccessToken,router, statusCode, Users, catchAndShowError, ShippingAddress, createID, encryptPW,
+    UserRoles, generateRefreshToken, generateAccessToken, TokenTracking, sendAuthResponse, upload, ValidateToken,
+    TokenUpdate, chalk, destroyToCloudinary, getPublicIdFromURL, uploadToCloudinary, literal
+} = require("../shared/router-dependencies");
 router.get('/api/manager/get-all-users', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_MANAGER') {
         return res.status(statusCode.accessDenied).json({message: 'Access token is invalid'});
@@ -234,8 +218,7 @@ router.put('/api/manager/lock-user-by-id', authenticateAccessToken, async (req, 
             await Users.update({is_locked: true,}, {where: {id: req.body.userID}});
             return res.status(statusCode.success).json('This user is locked');
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -262,8 +245,7 @@ router.put('/api/manager/restore-user-by-id', authenticateAccessToken, async (re
 
             }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -335,8 +317,7 @@ router.put('/api/user/update-user-info', authenticateAccessToken, upload.array('
             }
             return res.status(statusCode.success).json('Updated successfully');
         } catch (err) {
-            console.log(chalk.red('Error while handle: ', err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -370,8 +351,7 @@ router.put('/api/user/change-password', authenticateAccessToken, upload.none(), 
             } else
                 return res.status(statusCode.success).json({message: 'Changing failed! Please check your password'});
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -383,11 +363,11 @@ router.delete('/api/user/delete-account/:id', authenticateAccessToken, async (re
             where: {id: req.params.id}
         })
         if (!result) {
-            res.status(404).json({message: 'This action has been failed'});
+            return res.status(statusCode.errorHandle).json({message: 'This action has been failed'});
         }
-        res.status(200).json({message: 'Deleted this account successfully'});
+        return res.status(statusCode.success).json({message: 'Deleted this account successfully'});
     } catch (err) {
-        console.error(err);
+        catchAndShowError(err, res)
     }
 })
 module.exports = router;

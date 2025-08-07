@@ -1,16 +1,15 @@
-const _express = require('express');
-const router = _express.Router();
-const {Orders, OrderDetail, NotifyBrand, NotifyUser, ProductVariants} = require('../models/_index');
-const {createID, catchAndShowError} = require("../utils/functions.global");
-const statusCode = require("../utils/statusCode");
-const express = require("express");
-const multer = require("multer");
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Op} = require("sequelize");
-const chalk = require("chalk");
-
 //get all notices for the vendor
+const {
+    router,
+    authenticateAccessToken,
+    statusCode,
+    NotifyBrand,
+    NotifyUser,
+    Op,
+    Orders,
+    createID
+} = require("../shared/router-dependencies");
+const {catchAndShowError} = require("../utils/functions.global");
 router.get('/api/vendor/get-all-notify-me', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
@@ -39,8 +38,7 @@ router.get('/api/vendor/get-all-notify-me', authenticateAccessToken, async (req,
                 data: rows,
             });
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -75,8 +73,7 @@ router.get('/api/user/get-all-notify-me', authenticateAccessToken, async (req, r
                 data: rows,
             });
         } catch (err) {
-            console.error(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -107,8 +104,7 @@ router.get('/api/user/get-notify-detail', authenticateAccessToken, async (req, r
 
             return res.status(statusCode.success).json(result);
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -168,9 +164,8 @@ router.post('/api/user/get-all-notify-by-type', authenticateAccessToken, async (
                 } else return res.status(statusCode.errorHandle).json({message: 'No notify me found with this brand\'s id'});
             }
 
-        } catch (e) {
-            console.log(chalk.red(e))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        } catch (err) {
+            catchAndShowError(err, res)
         }
 })
 
@@ -218,8 +213,7 @@ router.get('/api/user/open-notification', authenticateAccessToken, async (req, r
                 }
             }
         } catch (err) {
-            console.log(chalk.red(err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -250,8 +244,7 @@ router.post('/api/vendor/accept-order', authenticateAccessToken, async (req, res
             return res.status(statusCode.success).json({message: 'Order has been confirmed'});
 
         } catch (err) {
-            console.log(chalk.red(err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -271,7 +264,7 @@ router.put('/api/user/mark-all-notifications-read', authenticateAccessToken, asy
                         }
                     }
                 )
-            }else if (req.user.role === 'ROLE_VENDOR') {
+            } else if (req.user.role === 'ROLE_VENDOR') {
                 await NotifyBrand.update(
                     {status: 'READ'},
                     {
@@ -315,8 +308,7 @@ router.delete('/api/user/delete-notification', authenticateAccessToken, async (r
             if (!result || result === 0) return res.status(statusCode.errorHandle).json({message: 'Xóa thông báo thất bại'})
             return res.status(statusCode.success).json({message: 'Xoá thành công'});
         } catch (err) {
-            console.log(chalk.red(err))
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 
@@ -355,8 +347,7 @@ router.delete('/api/user/delete-notifications', authenticateAccessToken, async (
         if (result === 0) return res.status(statusCode.empty).json({message: 'Không có dữ liệu'});
         return res.status(statusCode.success).json({message: 'Deleted successfully'});
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res)
     }
 });
 
@@ -385,8 +376,7 @@ router.delete('/api/user/delete-all-notifications', authenticateAccessToken, asy
         if (!result || result === 0) return res.status(statusCode.errorHandle).json({message: 'Xóa thất bại'})
         return res.status(statusCode.success)
     } catch (err) {
-        console.log(chalk.red(err));
-        return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+        catchAndShowError(err, res)
     }
 })
 

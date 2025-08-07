@@ -1,16 +1,6 @@
-const {TokenStore} = require('../models/_index');
-
-const _express = require('express');
-const router = _express.Router();
-
-const {generateAccessToken, generateRefreshToken} = require('../security/JWTProvider');
-const {verify, sign} = require("jsonwebtoken");
-const {TokenUpdate} = require("../security/TokenTracking");
-require("ms");
-const {sendAuthResponse} = require("../utils/auth.utils");
-const chalk = require("chalk");
-const statusCode = require("../utils/statusCode");
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
+const {router,statusCode, verify, TokenStore, generateAccessToken, generateRefreshToken, TokenUpdate, sendAuthResponse,
+    authenticateAccessToken, catchAndShowError
+} = require("../shared/router-dependencies");
 
 const {REFRESH_SECRET_KEY} = process.env;
 router.post('/api/auth/refresh', async (req, res) => {
@@ -22,7 +12,6 @@ router.post('/api/auth/refresh', async (req, res) => {
 
     try {
         const decoded = verify(refreshToken, REFRESH_SECRET_KEY);
-        console.log(decoded.id)
 
         const checkToken = await TokenStore.findOne({
             where: {
@@ -51,8 +40,7 @@ router.post('/api/auth/refresh', async (req, res) => {
 
         sendAuthResponse(res, payload, payload, process.env.EXPIRE_IN_WEEK, newAccessToken, newRefreshToken,)
     } catch (err) {
-        console.log(chalk.red('53', err));
-        return res.status(statusCode.errorHandle).json({message: 'Invalid or expired refresh token'});
+        catchAndShowError(err, res);
     }
 
 })
@@ -93,8 +81,7 @@ router.post('/api/me/logout', authenticateAccessToken, async (req, res) => {
                 return res.status(statusCode.success).json({message: 'Logout successfully'});
             }
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res);
         }
 })
 

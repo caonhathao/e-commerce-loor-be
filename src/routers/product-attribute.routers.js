@@ -1,13 +1,7 @@
-const {ProductAttributes, ProductVariants, Products} = require('../models/_index');
-
-const _express = require('express');
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const chalk = require("chalk");
-const {generateID, catchAndShowError} = require("../utils/functions.global");
-const router = _express.Router();
-const statusCode = require("../utils/statusCode");
-
 //get all variant's attributes from any variant
+const {router, ProductAttributes, statusCode, catchAndShowError, authenticateAccessToken, ProductVariants, Products,
+    createID
+} = require("../shared/router-dependencies");
 router.post('/api/public/get-all-variant-attributes', async (req, res) => {
     try {
         const allAttributes = await ProductAttributes.findAll(
@@ -59,7 +53,7 @@ router.post('/api/vendor/create-new-variant-attribute/:id', authenticateAccessTo
             });
             for (const [key, value] of Object.entries(req.body)) {
                 const newProductAttribute = await ProductAttributes.create({
-                    id: generateID('ATTR'),
+                    id: createID('ATTR'),
                     variant_id: req.params.id,
                     name_att: key,
                     value_att: value,

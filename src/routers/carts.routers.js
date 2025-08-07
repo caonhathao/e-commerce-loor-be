@@ -1,49 +1,40 @@
-const {createID, catchAndShowError} = require('../utils/functions.global');
-
-const {Carts, ProductVariants, Brands, Products} = require('../models/_index');
-const express = require("express");
-const router = express.Router();
-const statusCode = require('../utils/statusCode');
-const multer = require("multer");
-const upload = multer();
-const {authenticateAccessToken} = require("../security/JWTAuthentication");
-const {Sequelize} = require("sequelize");
-const {getIO} = require("../services/websocket");
-const chalk = require("chalk");
-const {Op} = require('sequelize');
-
 //get: get cart's information (list of products)
+const {
+    router, authenticateAccessToken, statusCode, Carts, ProductVariants, Products, Brands, catchAndShowError, Op,
+    upload, Sequelize, createID
+} = require("../shared/router-dependencies");
 router.get('/api/user/get-cart', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            const result = await Carts.findAll({
-                where: {
-                    user_id: req.user.id,
-                },
-                attributes: {exclude: ['createdAt', 'updatedAt', 'user_id']},
-                include: [{
-                    model: ProductVariants,
-                    as: 'ProductVariants',
-                    attributes: ['name', 'price', 'stock', 'image_link'],
+            const result = await
+                Carts.findAll({
+                    where: {
+                        user_id: req.user.id,
+                    },
+                    attributes: {exclude: ['createdAt', 'updatedAt', 'user_id']},
                     include: [{
-                        model: Products,
-                        as: 'Products',
-                        attributes: ['status', 'brand_id'],
+                        model: ProductVariants,
+                        as: 'ProductVariants',
+                        attributes: ['name', 'price', 'stock', 'image_link'],
                         include: [{
-                            model: Brands,
-                            as: 'Brands',
-                            attributes: ['name', 'image_link'],
+                            model: Products,
+                            as: 'Products',
+                            attributes: ['status', 'brand_id'],
+                            include: [{
+                                model: Brands,
+                                as: 'Brands',
+                                attributes: ['name', 'image_link'],
+                            }]
                         }]
-                    }]
-                }],
-                order: [
-                    [{model: ProductVariants, as: 'ProductVariants'},
-                        {model: Products, as: 'Products'},
-                        'brand_id', 'ASC'] // Sắp xếp tăng dần theo brand_id
-                ]
-            })
+                    }],
+                    order: [
+                        [{model: ProductVariants, as: 'ProductVariants'},
+                            {model: Products, as: 'Products'},
+                            'brand_id', 'ASC'] // Sắp xếp tăng dần theo brand_id
+                    ]
+                })
             if (!result) {
                 return res.status(statusCode.errorHandle).json({message: 'No cart found with this user\'s id'});
             }
@@ -153,8 +144,8 @@ router.get('/api/user/search-cart', authenticateAccessToken, async (req, res) =>
                 const groupedByBrand = {};
 
                 for (const cart of result) {
-                    const brand = cart.product_variants?.products?.brands;
-                    const brandId = cart.product_variants?.products?.brand_id;
+                    const brand = cart.ProductVariants?.products?.Brands;
+                    const brandId = cart.ProductVariants?.products?.brand_id;
 
                     if (!groupedByBrand[brandId]) {
                         groupedByBrand[brandId] = {
@@ -171,14 +162,14 @@ router.get('/api/user/search-cart', authenticateAccessToken, async (req, res) =>
                 const groupedResult = Object.values(groupedByBrand).map(group => {
                     group.items = group.items.map(cart => {
                         const cartJSON = cart.toJSON(); // chuyển instance Sequelize thành object thuần
-                        delete cartJSON.product_variants.products.brands; // xoá trường products
-                        delete cartJSON.product_variants.products.brand_id;
+                        delete cartJSON.ProductVariants.Products.Brands; // xoá trường products
+                        delete cartJSON.ProductVariants.Products.brand_id;
                         return cartJSON;
                     });
                     return group;
                 });
 
-                return res.status(200).json(groupedResult);
+                return res.status(statusCode.success).json(groupedResult);
             }
         } catch (err) {
             catchAndShowError(err, res)
@@ -225,8 +216,7 @@ router.post('/api/user/add-to-cart', authenticateAccessToken, upload.none(), asy
             }
             return res.status(statusCode.success).json({message: 'Added to cart successfully'});
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -255,8 +245,7 @@ router.put('/api/user/update-cart', authenticateAccessToken, upload.none(), asyn
             if (result === 0) return res.status(statusCode.errorHandle).json({message: 'Update cart failed! Please try again later'});
             return res.status(statusCode.success).json({message: 'Update cart successfully'});
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
     }
 })
@@ -266,10 +255,7 @@ router.delete('/api/user/delete-cart', authenticateAccessToken, async (req, res)
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
         try {
-            console.log(req.body)
-
             for (let i = 0; i < req.body.length; i++) {
-                console.log(req.body[i])
                 const result = await Carts.destroy({
                     where: {
                         id: req.body[i],
@@ -281,8 +267,7 @@ router.delete('/api/user/delete-cart', authenticateAccessToken, async (req, res)
 
             return res.status(statusCode.success).json({message: 'Delete cart successfully'});
         } catch (err) {
-            console.log(chalk.red(err));
-            return res.status(statusCode.serverError).json({message: 'Internal server error! Please try again later!'});
+            catchAndShowError(err, res)
         }
 })
 module.exports = router;
