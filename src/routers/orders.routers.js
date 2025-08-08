@@ -65,7 +65,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                         }
                     })
 
-                    console.log(chalk.green(updateVariant))
+                    // console.log(chalk.green(updateVariant))
                 } else {
                     const updateVariant = await ProductVariants.update({
                         stock: 0,
@@ -75,7 +75,7 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                             id: child.variant_id
                         }
                     })
-                    console.log(chalk.green(updateVariant))
+                    // console.log(chalk.green(updateVariant))
                 }
 
             }
@@ -199,7 +199,7 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
     if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
-        console.log(req.user.id)
+        // console.log(req.user.id)
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20
@@ -212,7 +212,7 @@ router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, re
                 brand_id: req.user.id,
             },
             attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-            logging: console.log
+            // logging: console.log
         })
 
         return res.status(statusCode.success).json({
@@ -338,7 +338,7 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else {
         try {
-            console.log(req.query.keyword)
+            // console.log(req.query.keyword)
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20
             const offset = (page - 1) * limit

@@ -131,7 +131,7 @@ router.post('/api/public/create-user', upload.none(), async (req, res) => {
 
 //post: user logs in
 router.post('/api/public/user-login', upload.none(), async (req, res) => {
-    console.log(req.body)
+    // console.log(req.body)
     try {
         const user = await Users.findOne({
             where: {

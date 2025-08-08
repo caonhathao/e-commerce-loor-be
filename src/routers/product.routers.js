@@ -86,7 +86,7 @@ router.get('/api/public/get-all-products/:id', async (req, res) => {
             attributes: {exclude: ['pro_tsv', 'brand_id', 'promotion', 'description', 'tags']},
             order: [['status', 'ASC']]
         });
-        console.log(count, rows.length);
+        // console.log(count, rows.length);
         return res.status(statusCode.success).json({
             current_page: page,
             total_items: count,
