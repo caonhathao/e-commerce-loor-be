@@ -1,9 +1,11 @@
 //post: create new order
 const {
     router, authenticateAccessToken, ProductVariants, statusCode, Products, literal, chalk, Orders, createID,
-    Receipt, OrderDetail, NotifyBrand, NotifyUser, getIO, Op, systemNotify, formatTemplate, catchAndShowError, OrderLog
+    Receipt, OrderDetail, NotifyBrand, NotifyUser, getIO, Op, systemNotify, formatTemplate, catchAndShowError, OrderLog,
+    FeaturedProduct
 } = require("../shared/router-dependencies");
 
+//create new order
 router.post('/api/user/create-new-order', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
@@ -22,13 +24,15 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 message: `Checking...${counting}`,
                 step: counting + 1
             })
+
+            let variant = {}
             for (const child of item.list) {
                 // delete ProductVariants.rawAttributes.variant_id;
                 // delete ProductVariants.tableAttributes.variant_id;
                 // ProductVariants.refreshAttributes();
 
                 //check variant's exist
-                const variant = await ProductVariants.findOne({
+                variant = await ProductVariants.findOne({
                     where: {
                         id: child.variant_id
                     }
@@ -134,6 +138,16 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
                 }
             }
 
+            await FeaturedProduct.update(
+                {
+                    product_orders: literal(`product_orders + 1`)
+                },
+                {
+                    where: { product_id: variant.product_id }
+                }
+            )
+
+
             await NotifyUser.create({
                 id: createID('NOT-USE'),
                 user_id: req.user.id,
@@ -163,7 +177,6 @@ router.post('/api/user/create-new-order', authenticateAccessToken, async (req, r
         catchAndShowError(err, res)
     }
 })
-
 //get: get all orders from any customer
 router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_USER') {
@@ -194,39 +207,112 @@ router.get('/api/user/get-all-orders', authenticateAccessToken, async (req, res)
 
         }
 })
-
-router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_VENDOR') {
+//delete: cancel an order
+router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
     } else
-        // console.log(req.user.id)
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20
-        const offset = (page - 1) * limit
+        try {
+            const result = await Orders.findOne({
+                where: {
+                    id: req.params.id,
+                    user_id: req.user.id,
+                }
+            })
+            if (!result) {
+                return res.status(statusCode.errorHandle).json({message: 'No order found with this id'});
+            }
 
-        const {count, rows} = await Orders.findAndCountAll({
-            limit,
-            offset,
-            where: {
-                brand_id: req.user.id,
-            },
-            attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
-            // logging: console.log
-        })
+            const update = await Orders.update({
+                    status: 'CANCELED',
+                }, {
+                    where: {id: req.params.id}
+                }
+            )
 
-        return res.status(statusCode.success).json({
-            current_page: page,
-            total_items: count,
-            current_items: rows.length,
-            total_pages: Math.ceil(count / limit),
-            data: rows,
-        });
-    } catch (err) {
-        catchAndShowError(err, res);
+            await NotifyBrand.create({
+                id: createID('NOT-BRA'),
+                brand_id: result.brand_id,
+                title: 'Đơn hàng bị hủy',
+                content: `Đơn hàng có mã ${req.params.id} bị huy`,
+                redirect_url: `/order-detail/${req.params.id}`,
+                type: "ORDER",
+                status: "IDLE",
+            })
+
+            await Receipt.update({
+                payment_status: 'CANCELED'
+            }, {
+                where: {
+                    order_id: req.params.id
+                }
+            })
+            return res.status(statusCode.success).json({message: 'Deleted successfully'});
+        } catch (err) {
+            catchAndShowError(err, res);
+        }
+})
+//user searches an order by id
+router.get('/api/user/search-by-id', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'Quyền truy cứu bị từ chối'});
+    } else {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
+
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
+                where: {
+                    id: {
+                        [Op.like]: `%${req.query.keyword}%`
+                    }
+                },
+                attributes: {exclude: ['user_id', 'shipping_type', 'brand_id', 'updatedAt']},
+            })
+
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        } catch (e) {
+            catchAndShowError(e, res)
+        }
     }
 })
+//user gets order detail before write some review
+router.get('/api/user/get-order-detail-review', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_USER') {
+        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
+    } else {
+        try {
+            /*
+            * This api will return: Image, name of products in order
+            */
 
+            const orderDetail = await OrderDetail.findAll({
+                where: {
+                    order_id: req.query.id,
+                },
+                include: [{
+                    model: ProductVariants,
+                    as: 'ProductVariants',
+                    attributes: ['image_link', 'name']
+                }]
+            })
+
+            return res.status(statusCode.success).json(orderDetail)
+        } catch (e) {
+            catchAndShowError(e, res)
+        }
+    }
+})
+//filter by status of orders
 router.get('/api/user/get-all-orders-by-status', authenticateAccessToken, async (req, res) => {
     if (req.user.role !== 'ROLE_VENDOR' && req.user.role !== 'ROLE_USER') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
@@ -305,32 +391,36 @@ router.get('/api/user/get-order-reviews', authenticateAccessToken, async (req, r
         }
 })
 
-//get the information of order then create reviews
-router.get('/api/user/get-order-detail-review', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
+router.get('/api/vendor/get-all-orders', authenticateAccessToken, async (req, res) => {
+    if (req.user.role !== 'ROLE_VENDOR') {
         return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else {
+    } else
+        // console.log(req.user.id)
         try {
-            /*
-            * This api will return: Image, name of products in order
-            */
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20
+            const offset = (page - 1) * limit
 
-            const orderDetail = await OrderDetail.findAll({
+            const {count, rows} = await Orders.findAndCountAll({
+                limit,
+                offset,
                 where: {
-                    order_id: req.query.id,
+                    brand_id: req.user.id,
                 },
-                include: [{
-                    model: ProductVariants,
-                    as: 'ProductVariants',
-                    attributes: ['image_link', 'name']
-                }]
+                attributes: {exclude: ['updatedAt', 'fee', 'brand_id']},
+                // logging: console.log
             })
 
-            return res.status(statusCode.success).json(orderDetail)
-        } catch (e) {
-            catchAndShowError(e, res)
+            return res.status(statusCode.success).json({
+                current_page: page,
+                total_items: count,
+                current_items: rows.length,
+                total_pages: Math.ceil(count / limit),
+                data: rows,
+            });
+        } catch (err) {
+            catchAndShowError(err, res);
         }
-    }
 })
 
 router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res) => {
@@ -362,40 +452,6 @@ router.get('/api/vendor/search-by-id', authenticateAccessToken, async (req, res)
             });
         } catch (e) {
             catchAndShowError(e, res);
-        }
-    }
-})
-
-// search orders by id
-router.get('/api/user/search-by-id', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
-        return res.status(statusCode.accessDenied).json({message: 'Quyền truy cứu bị từ chối'});
-    } else {
-        try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20
-            const offset = (page - 1) * limit
-
-            const {count, rows} = await Orders.findAndCountAll({
-                limit,
-                offset,
-                where: {
-                    id: {
-                        [Op.like]: `%${req.query.keyword}%`
-                    }
-                },
-                attributes: {exclude: ['user_id', 'shipping_type', 'brand_id', 'updatedAt']},
-            })
-
-            return res.status(statusCode.success).json({
-                current_page: page,
-                total_items: count,
-                current_items: rows.length,
-                total_pages: Math.ceil(count / limit),
-                data: rows,
-            });
-        } catch (e) {
-            catchAndShowError(e, res)
         }
     }
 })
@@ -448,7 +504,7 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
 
             await NotifyBrand.create({
                 id: createID('NOT-BRA'),
-                user_id: req.user.id,
+                brand_id: req.user.id,
                 title: systemNotify[req.body.status].vendor_content.title,
                 content: formatTemplate(systemNotify[req.body.status].vendor_content.content, {id: req.body.id}),
                 redirect_url: `/order-detail/${req.body.id}`,
@@ -470,17 +526,16 @@ router.put('/api/vendor/update-status-order', authenticateAccessToken, async (re
         }
 })
 
-router.put('/api/user/update-status-order', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
-        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else
+//in the future, when a shipping system is ready, this api will be used with authentication
+router.put('/api/ship/update-complete-status-order', async (req, res) => {
+    console.log(req.body)
         try {
             const io = getIO();
 
             const check = await Orders.findOne({
                 where: {
                     id: req.body.id,
-                    user_id: req.user.id,
+                    // brand_id: req.user.id,
                 }
             })
 
@@ -502,7 +557,25 @@ router.put('/api/user/update-status-order', authenticateAccessToken, async (req,
                 id: createID('ORD-LOG'),
                 order_id: req.body.id,
                 status: req.body.status,
-                type: "RECEIVER"
+                type: "SENDER"
+            })
+
+            await FeaturedProduct.update({
+                product_orders:literal(`product_orders + 1`),
+            }, {
+                where: {
+                    product_id: req.body.id
+                }
+            })
+
+            await NotifyUser.create({
+                id: createID('NOT-USE'),
+                user_id: check.user_id,
+                title: systemNotify[req.body.status].user_content.title,
+                content: formatTemplate(systemNotify[req.body.status].user_content.content, {id: req.body.id}),
+                redirect_url: `/order-detail/${req.body.id}`,
+                type: systemNotify[req.body.status].type,
+                status: "IDLE",
             })
 
             await NotifyBrand.create({
@@ -515,75 +588,18 @@ router.put('/api/user/update-status-order', authenticateAccessToken, async (req,
                 status: "IDLE",
             })
 
-            await NotifyUser.create({
-                id: createID('NOT-BRA'),
-                brand_id: check.user_id,
-                title: systemNotify[req.body.status].user_content.title,
-                content: formatTemplate(systemNotify[req.body.status].user_content.content, {id: req.body.id}),
-                redirect_url: `/order-detail/${req.body.id}`,
-                type: systemNotify[req.body.status].type,
-                status: "IDLE",
-            })
-
             io.to(`room_${req.user.id}`).emit('update_status_order', {
                 message: `/order-detail/${req.body.id}`,
             })
 
-            io.to(`room_${check.brand_id}`).emit('update_status_order', {
+            io.to(`room_${check.user_id}`).emit('update_status_order', {
                 message: `/order-detail/${req.body.id}`,
             })
 
             return res.status(statusCode.success).json({message: 'Cập nhật thành công'});
 
-        } catch (err) {
-            catchAndShowError(err, res);
-
-        }
-})
-
-//delete: cancel an order
-router.put('/api/user/cancel-order/:id', authenticateAccessToken, async (req, res) => {
-    if (req.user.role !== 'ROLE_USER') {
-        return res.status(statusCode.accessDenied).json({message: 'You are not allowed to access this action'});
-    } else
-        try {
-            const result = await Orders.findOne({
-                where: {
-                    id: req.params.id,
-                    user_id: req.user.id,
-                }
-            })
-            if (!result) {
-                return res.status(statusCode.errorHandle).json({message: 'No order found with this id'});
-            }
-
-            const update = await Orders.update({
-                    status: 'CANCELED',
-                }, {
-                    where: {id: req.params.id}
-                }
-            )
-
-            await NotifyBrand.create({
-                id: createID('NOT-BRA'),
-                brand_id: result.brand_id,
-                title: 'Đơn hàng bị hủy',
-                content: `Đơn hàng có mã ${req.params.id} bị huy`,
-                redirect_url: `/order-detail/${req.params.id}`,
-                type: "ORDER",
-                status: "IDLE",
-            })
-
-            await Receipt.update({
-                payment_status: 'CANCELED'
-            }, {
-                where: {
-                    order_id: req.params.id
-                }
-            })
-            return res.status(statusCode.success).json({message: 'Deleted successfully'});
-        } catch (err) {
-            catchAndShowError(err, res);
+        }catch (e) {
+            catchAndShowError(e, res)
         }
 })
 module.exports = router;
